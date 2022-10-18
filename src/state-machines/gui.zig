@@ -199,15 +199,15 @@ pub const XjisGui = struct {
         // decrease sine fall off moment
         if (jis.timbre > 0.02)
             jis.timbre -= 0.01;
-        print("timbre = {}\n", .{jis.timbre});
+        print("timbre = {d:.2}\n", .{jis.timbre});
         return false;
     }
 
     fn xjiss_on_F4(jis: *Jis) bool {
-        // increase  sine fall off moment
+        // increase sine fall off moment
         if (jis.timbre < 1.0)
             jis.timbre += 0.01;
-        print("timbre = {}\n", .{jis.timbre});
+        print("timbre = {d:.2}\n", .{jis.timbre});
         return false;
     }
 
