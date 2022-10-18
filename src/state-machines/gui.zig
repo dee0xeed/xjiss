@@ -366,23 +366,17 @@ pub const XjisGui = struct {
         gd.io.enable(&me.md.eq, .{}) catch unreachable;
     }
 
-    fn workD0(me: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
-        _ = src;
+    fn workD0(me: *StageMachine, _: ?*StageMachine, dptr: ?*anyopaque) void {
         var gd = util.opaqPtrTo(me.data, *GuiData);
         var io = util.opaqPtrTo(dptr, *EventSource);
 
-        while (true) {
-            const pend = x11.XPending(gd.display);
-            if (0 == pend)
-                break;
+        while (x11.XPending(gd.display) != 0) {
             var xe: x11.XEvent = undefined;
             _ = x11.XNextEvent(gd.display, &xe);
-//            io.enable(&me.md.eq, .{}) catch unreachable;
             const handler = gd.eventHandlers[@intCast(usize, xe.type)] orelse continue;
             if (handler(&xe, gd))
                 me.msgTo(null,  Message.M0, null);
         }
-
         io.enable(&me.md.eq, .{}) catch unreachable;
     }
 

@@ -161,7 +161,6 @@ pub const Jis = struct {
                 var a = @intToFloat(f32, jis.amp);
                 var o = @intToFloat(f32, jis.octave + 1);
                 var b: u32 = @floatToInt(u32, jis.timbre * @intToFloat(f32, ti.period) / o);
-                //var b: u32 = ti.period / o / 2;
 
                 if (t.phase < b)
                     sj = @floatToInt(i16, a * math.sin(o * 2.0 * math.pi * @intToFloat(f32, t.phase) / @intToFloat(f32, ti.period)));
