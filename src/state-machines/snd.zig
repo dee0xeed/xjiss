@@ -98,6 +98,7 @@ pub const XjisSound = struct {
         _ = alsa.snd_pcm_get_params(sd.handle, &buf, &per);
         sd.nframes = per;
         sd.snd_buf = a.alloc(i16, 2 * sd.nframes) catch unreachable;
+        mem.set(i16, sd.snd_buf, 0);
     }
 
     fn initEnter(me: *StageMachine) void {
