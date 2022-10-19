@@ -1,5 +1,10 @@
 # Just Intonation Synthesizer
 
+## How to build
+
+* make sure you have `libasound2-dev` and `libx11-dev` installed
+* `zig build`
+
 ## Tone system
 
 ```
@@ -19,3 +24,15 @@ z     x    c    v    b     n    m    ,     .    /
 DO    RE   MI   FA   SO    LA   SI   Do    Re   Mi
 1/1   9/8  5/4  4/3  3/2   5/3  15/8 2/1   9/4  5/2
 ```
+
+## Controls
+
+* Esc - exit
+* F1 - decrease volume
+* F2 - increase volume
+* F3 - adjust timbre
+* F4 - adjust timbre
+* F5 - decrease attack
+* F6 - increase attack
+* F7 - decrease release
+* F8 - increase release
