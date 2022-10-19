@@ -20,7 +20,7 @@ const Stage = StageMachine.Stage;
 const Reflex = Stage.Reflex;
 
 const MachinePool = @import("../machine-pool.zig").MachinePool;
-const Client = @import("client.zig").Client;
+const Client = @import("Client.zig").Client;
 //const Context =  @import("../common-sm/context.zig").IoContext;
 const util = @import("../util.zig");
 

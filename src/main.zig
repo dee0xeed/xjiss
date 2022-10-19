@@ -7,6 +7,7 @@ const Snd = @import("state-machines/snd.zig").XjisSound;
 const MachinePool = @import("machine-pool.zig").MachinePool;
 const Listener = @import("state-machines/listener.zig").Listener;
 const Server = @import("state-machines/server.zig").Worker;
+const Client = @import("state-machines/client.zig").Worker;
 
 fn help() void {
     std.debug.print("Usage\n", .{});
@@ -56,6 +57,11 @@ pub fn main() !void {
             help();
             return;
         }
+        const host = std.mem.sliceTo(std.os.argv[2], 0);
+        const arg3 = std.mem.sliceTo(std.os.argv[3], 0);
+        const port = std.fmt.parseInt(u16, arg3, 10) catch 3333;
+        var client = try Client.onHeap(allocator, &md, host, port);
+        try client.run();
         mode = .client;
     } else {
         help();

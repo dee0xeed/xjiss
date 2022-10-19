@@ -18,7 +18,7 @@ const Stage = StageMachine.Stage;
 const Reflex = Stage.Reflex;
 
 const MachinePool = @import("../machine-pool.zig").MachinePool;
-const Client = @import("client.zig").Client;
+const Client = @import("Client.zig").Client;
 const util = @import("../util.zig");
 
 pub const Listener = struct {
