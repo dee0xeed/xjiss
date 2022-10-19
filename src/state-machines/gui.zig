@@ -35,6 +35,11 @@ pub const XjisGui = struct {
     const win_height: c_int = 204;
     const key_width: c_int = 40;
 
+    pub const Mode = enum {
+        server,
+        client,
+    };
+
     const eventHandlerFnPtr = *const fn(xe: *x11.XEvent, gd: *GuiData) bool;
     const funcKeyHandlerFnPtr = *const fn(jis: *Jis) bool;
     const GuiData = struct {
@@ -51,9 +56,10 @@ pub const XjisGui = struct {
         jis: *Jis,
         eventHandlers: [x11.LASTEvent]?eventHandlerFnPtr,
         funcKeysHandlers: [256]?funcKeyHandlerFnPtr,
+        mode: Mode,
     };
 
-    pub fn onHeap(a: Allocator, md: *MessageDispatcher, jis: *Jis) !*StageMachine {
+    pub fn onHeap(a: Allocator, md: *MessageDispatcher, jis: *Jis, mode: Mode) !*StageMachine {
 
         var me = try StageMachine.onHeap(a, md, "GUI", 1);
         try me.addStage(Stage{.name = "INIT", .enter = &initEnter, .leave = null});
@@ -69,6 +75,7 @@ pub const XjisGui = struct {
         me.data = me.allocator.create(GuiData) catch unreachable;
         var gd = util.opaqPtrTo(me.data, *GuiData);
         gd.jis = jis;
+        gd.mode = mode;
 
         for (gd.eventHandlers) |*h| { h.* = null;}
         gd.eventHandlers[x11.Expose] = &handleExpose;
