@@ -1,4 +1,4 @@
-#Just Intonation Synthesizer
+# Just Intonation Synthesizer
 
 ## Tone system
 
