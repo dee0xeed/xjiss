@@ -49,3 +49,7 @@ Legend
 * F7 - decrease release
 * F8 - increase release
 * Space - toggle octaves
+
+## Links
+* [Introduction to Sound Programming with ALSA](https://www.linuxjournal.com/article/6735)
+* [A close look at ALSA](https://www.volkerschatz.com/noise/alsa.html)
