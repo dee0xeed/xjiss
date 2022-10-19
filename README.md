@@ -36,3 +36,4 @@ DO    RE   MI   FA   SO    LA   SI   Do    Re   Mi
 * F6 - increase attack
 * F7 - decrease release
 * F8 - increase release
+* Space - toggle octaves
