@@ -35,7 +35,7 @@ Legend
 
   b : key on the keyboard
  SO : note/pitch (G in western notation in this case)
-3/2 : frequency ration (pure/just fifth in this case)
+3/2 : frequency ratio (pure/just fifth in this case)
 ```
 
 ## Controls
