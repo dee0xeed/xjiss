@@ -33,8 +33,8 @@ DO    RE   MI   FA   SO    LA   SI   Do    Re   Mi
 Legend
 
   b - key on the keyboard
- SO - note/pitch (G in western notation in this case)
-3:2 - frequency ratio (pure/just fifth in this case)
+ SO - note/pitch (G in usual notation for this case)
+3:2 - frequency ratio (pure/just fifth for this case)
 ```
 
 ## Controls
