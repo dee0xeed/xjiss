@@ -4,7 +4,7 @@
 It is written as
 
 * experiment with just intonation (music)
-* event driven state machine demo (programming)
+* event driven state machines demo (programming)
 
 ## How to build
 
