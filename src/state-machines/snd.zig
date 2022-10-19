@@ -25,6 +25,7 @@ const Jis =  @import("../synt.zig").Jis;
 const alsa = @cImport({
     @cInclude("alsa/asoundlib.h");
     @cInclude("sys/poll.h");
+    @cInclude("stdio.h");
 });
 
 pub const XjisSound = struct {
@@ -78,7 +79,10 @@ pub const XjisSound = struct {
 //            exit(1);
 //        }
 
-//        ret = alsa.snd_output_stdio_attach(&sd.output, stdout, 0);
+        ret = alsa.snd_output_stdio_attach(
+            @ptrCast([*c]?*alsa.snd_output_t, @alignCast(@alignOf([*c]*alsa.snd_output_t), &sd.output)),
+            alsa.stdout, 0
+        );
 //        if (ret < 0) {
 //            rintf("ERR: %s() - snd_output_stdio_attach() failed: %s\n", __func__, snd_strerror(ret));
 //            exit(1);
@@ -94,7 +98,7 @@ pub const XjisSound = struct {
 //            exit(1);
 //        }
 
-//        alsa.snd_pcm_dump(sd.handle, sd.output);
+        _ = alsa.snd_pcm_dump(sd.handle, sd.output);
         _ = alsa.snd_pcm_get_params(sd.handle, &buf, &per);
         sd.nframes = per;
         sd.snd_buf = a.alloc(i16, 2 * sd.nframes) catch unreachable;
