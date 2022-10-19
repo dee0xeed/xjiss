@@ -33,8 +33,9 @@ pub const XjisSound = struct {
     const M0_WORK = Message.M0;
     const sampling_rate: c_int = 48000;
     const latency = 20000; // usec
+    // const device = "hw:0,0";
     const device = "plughw:0,0";
-    // const device = "default"; // does not work :(
+    // const device = "default"; // does not work for me :(
 
     const SoundData = struct {
         io: EventSource,
@@ -75,7 +76,7 @@ pub const XjisSound = struct {
             device, alsa.SND_PCM_STREAM_PLAYBACK, 0
         );
         if (ret < 0) {
-            print("{s}\n", .{alsa.snd_strerror(@intCast(c_int, ret))});
+            print("snd_pcm_open(): {s}\n", .{alsa.snd_strerror(@intCast(c_int, ret))});
             unreachable;
         }
 
@@ -147,13 +148,13 @@ pub const XjisSound = struct {
 
         const ret = alsa.snd_pcm_writei(sd.handle, sd.snd_buf.ptr, sd.nframes);
         if (ret < 0) {
-            print("{s}\n", .{alsa.snd_strerror(@intCast(c_int, ret))});
+            print("snd_pcm_writei(): {s}\n", .{alsa.snd_strerror(@intCast(c_int, ret))});
             _ = alsa.snd_pcm_prepare(sd.handle); // snd_pcm_recover()?
         }
-//        if (ret != nframes) {
-//            printf("OOPS: %s() - %d frames played out of %d\n", __func__, ret, nframes);
-//            snd_pcm_prepare(handle);
-//        }
+        if (ret != sd.nframes) {
+            print("snd_pcm_writei(): partial write, {}/{} frames\n", .{ret, sd.nframes});
+            // snd_pcm_prepare(handle);
+        }
 
         sd.jis.generateWaveForm(sd.snd_buf);
         io.enableOut(&me.md.eq) catch unreachable;
