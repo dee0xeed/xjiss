@@ -1,5 +1,11 @@
 # Just Intonation Synthesizer
 
+`xjiss` is a software synthesizer written for Linux in Zig programming language.
+It is written as
+
+* experiment with just intonation (music)
+* event driven state machine demo (programming)
+
 ## How to build
 
 * make sure you have `libasound2-dev` and `libx11-dev` installed
