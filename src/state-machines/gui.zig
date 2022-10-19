@@ -71,6 +71,10 @@ pub const XjisGui = struct {
         init.setReflex(.sm, Message.M0, Reflex{.transition = work});
         work.setReflex(.io, Message.D0, Reflex{.action = &workD0});
         work.setReflex(.io, Message.D2, Reflex{.action = &workD2});
+        // from server, tone off
+        work.setReflex(.sm, Message.M0, Reflex{.action = &workM0});
+        // from server, tone on
+        work.setReflex(.sm, Message.M1, Reflex{.action = &workM1});
 
         me.data = me.allocator.create(GuiData) catch unreachable;
         var gd = util.opaqPtrTo(me.data, *GuiData);
@@ -392,5 +396,17 @@ pub const XjisGui = struct {
         _ = src;
         var io = util.opaqPtrTo(dptr, *EventSource);
         _ = io;
+    }
+
+    fn workM0(me: *StageMachine, _: ?*StageMachine, dptr: ?*anyopaque) void {
+        var gd = util.opaqPtrTo(me.data, *GuiData);
+        var tn = util.opaqPtrTo(dptr, *u8);
+        toneOff(gd, @intCast(u6, tn.*));
+    }
+
+    fn workM1(me: *StageMachine, _: ?*StageMachine, dptr: ?*anyopaque) void {
+        var gd = util.opaqPtrTo(me.data, *GuiData);
+        var tn = util.opaqPtrTo(dptr, *u8);
+        toneOn(gd, @intCast(u6, tn.*));
     }
 };

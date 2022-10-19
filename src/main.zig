@@ -45,8 +45,8 @@ pub fn main() !void {
         var i: u8 = 0;
         var pool = try MachinePool.init(allocator, max_clients);
         while (i < max_clients) : (i += 1) {
-            var worker = try Server.onHeap(allocator, &md, &pool);
-            try worker.run();
+            var server = try Server.onHeap(allocator, &md, &pool, );
+            try server.run();
         }
         var reception = try Listener.onHeap(allocator, &md, port, &pool);
         try reception.run();

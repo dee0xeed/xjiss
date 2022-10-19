@@ -37,9 +37,11 @@ pub const Worker = struct {
         listener: *StageMachine,
         client: *Client,
         io: EventSource,
+        gui: *StageMachine,
+        tone_number: u8,
     };
 
-    pub fn onHeap (a: Allocator, md: *MessageDispatcher, pool: *MachinePool) !*StageMachine {
+    pub fn onHeap (a: Allocator, md: *MessageDispatcher, pool: *MachinePool, gui: *StageMachine) !*StageMachine {
 
         number += 1;
         var me = try StageMachine.onHeap(a, md, "SERVER", number);
@@ -60,6 +62,7 @@ pub const Worker = struct {
         me.data = me.allocator.create(WorkerData) catch unreachable;
         var wd = util.opaqPtrTo(me.data, *WorkerData);
         wd.pool = pool;
+        wd.gui = gui;
         return me;
     }
 
@@ -105,6 +108,14 @@ pub const Worker = struct {
             me.msgTo(wd.listener, M0_GONE, wd.client);
             return;
         };
+        const byte = cmd[0];
+        wd.tone_number = byte & 0x3F;
+        const pressed: bool = ((byte & 0x80) == 0x80);
+        if (pressed) {
+            me.msgTo(wd.gui, M1_ON, &wd.tone_number);
+        } else {
+            me.msgTo(wd.gui, M0_OF, &wd.tone_number);
+        }
         io.enable(&me.md.eq, .{}) catch unreachable;
     }
 
