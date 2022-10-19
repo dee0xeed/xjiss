@@ -86,7 +86,6 @@ pub const Listener = struct {
         var ptr = me.allocator.create(Client) catch unreachable;
         var client = @ptrCast(*Client, @alignCast(@alignOf(*Client), ptr));
         client.fd = fd;
-        // client.
 
         var sm = pd.wpool.get();
         if (sm) |worker| {

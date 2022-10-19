@@ -10,7 +10,7 @@ const TimeSpec = os.linux.timespec;
 const ITimerSpec = os.linux.itimerspec;
 
 const signalFd  = os.signalfd;
-const sigProcMask = os.sigprocmask;
+//const sigProcMask = os.sigprocmask;
 const SigSet = os.sigset_t;
 const SIG = os.SIG;
 const SigInfo = os.linux.signalfd_siginfo;
@@ -137,15 +137,16 @@ pub const EventSource = struct {
     }
 
     fn getSignalId(signo: u6) !i32 {
-        var sset: SigSet = std.os.empty_sigset;
+        var sset: SigSet = os.empty_sigset;
         // block the signal
-        std.os.linux.sigaddset(&sset, signo);
-        sigProcMask(SIG.BLOCK, &sset, null);
+        os.linux.sigaddset(&sset, signo);
+        //sigProcMask(@intCast(c_int, SIG.BLOCK), &sset, null);
+        _ = os.linux.sigprocmask(SIG.BLOCK, &sset, null);
         return signalFd(-1, &sset, 0);
     }
 
     fn getTimerId() !i32 {
-        return try timerFd(std.os.CLOCK.REALTIME, 0);
+        return try timerFd(os.CLOCK.REALTIME, 0);
     }
 
     /// obtain fd from OS
@@ -203,7 +204,7 @@ pub const EventSource = struct {
         };
         var p2 = @ptrCast([*]u8, @alignCast(@alignOf([*]u8), p1));
         var buf = p2[0..@sizeOf(AboutTimer)];
-        _ = try std.os.read(self.id, buf[0..]);
+        _ = try os.read(self.id, buf[0..]);
     }
 
     fn readSignalInfo(self: *Self) !void {
@@ -213,7 +214,7 @@ pub const EventSource = struct {
         };
         var p2 = @ptrCast([*]u8, @alignCast(@alignOf([*]u8), p1));
         var buf = p2[0..@sizeOf(SigInfo)];
-        _ = try std.os.read(self.id, buf[0..]);
+        _ = try os.read(self.id, buf[0..]);
     }
 
     pub fn readInfo(self: *Self) !void {

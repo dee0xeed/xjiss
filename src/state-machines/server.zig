@@ -54,8 +54,8 @@ pub const Worker = struct {
         init.setReflex(.sm, Message.M0, Reflex{.transition = idle});
         idle.setReflex(.sm, Message.M1, Reflex{.action = &idleM1});
         idle.setReflex(.sm, Message.M0, Reflex{.transition = recv});
-        recv.setReflex(.sm, Message.D0, Reflex{.action = &recvD0});
-        recv.setReflex(.sm, Message.D2, Reflex{.action = &recvD2});
+        recv.setReflex(.io, Message.D0, Reflex{.action = &recvD0});
+        recv.setReflex(.io, Message.D2, Reflex{.action = &recvD2});
 
         me.data = me.allocator.create(WorkerData) catch unreachable;
         var wd = util.opaqPtrTo(me.data, *WorkerData);
