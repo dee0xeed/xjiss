@@ -29,6 +29,13 @@ D+    RE-  Mb   M+   F+    Lb   Sb   D+    R-   Mb   M+
 z     x    c    v    b     n    m    ,     .    /
 DO    RE   MI   FA   SO    LA   SI   Do    Re   Mi
 1/1   9/8  5/4  4/3  3/2   5/3  15/8 2/1   9/4  5/2
+
+
+Legend
+
+  b : key on the keyboard
+ SO : note/pitch (G in western notation in this case)
+3/2 : frequency ration (pure/just fifth in this case)
 ```
 
 ## Controls
