@@ -74,29 +74,29 @@ pub const XjisSound = struct {
             @ptrCast([*c]?*alsa.snd_pcm_t, @alignCast(@alignOf([*c]*alsa.snd_pcm_t), &sd.handle)),
             device, alsa.SND_PCM_STREAM_PLAYBACK, 0
         );
-//        if (ret < 0) {
-//            printf("ERR: %s() - snd_pcm_open() failed: %s\n", __func__, snd_strerror(ret));
-//            exit(1);
-//        }
+        if (ret < 0) {
+            print("{s}\n", .{alsa.snd_strerror(@intCast(c_int, ret))});
+            unreachable;
+        }
 
         ret = alsa.snd_output_stdio_attach(
             @ptrCast([*c]?*alsa.snd_output_t, @alignCast(@alignOf([*c]*alsa.snd_output_t), &sd.output)),
             alsa.stdout, 0
         );
-//        if (ret < 0) {
-//            rintf("ERR: %s() - snd_output_stdio_attach() failed: %s\n", __func__, snd_strerror(ret));
-//            exit(1);
-//        }
+        if (ret < 0) {
+            print("{s}\n", .{alsa.snd_strerror(@intCast(c_int, ret))});
+            unreachable;
+        }
 
         ret = alsa.snd_pcm_set_params(
             sd.handle,
             alsa.SND_PCM_FORMAT_S16, alsa.SND_PCM_ACCESS_RW_INTERLEAVED,
             2, sampling_rate, 0, latency
         );
-//        if (ret < 0) {
-//            printf("ERR: %s() - snd_pcm_set_params() failed: %s\n", __func__, snd_strerror(ret));
-//            exit(1);
-//        }
+        if (ret < 0) {
+            print("{s}\n", .{alsa.snd_strerror(@intCast(c_int, ret))});
+            unreachable;
+        }
 
         _ = alsa.snd_pcm_dump(sd.handle, sd.output);
         _ = alsa.snd_pcm_get_params(sd.handle, &buf, &per);
@@ -147,7 +147,8 @@ pub const XjisSound = struct {
 
         const ret = alsa.snd_pcm_writei(sd.handle, sd.snd_buf.ptr, sd.nframes);
         if (ret < 0) {
-            _ = alsa.snd_pcm_prepare(sd.handle);
+            print("{s}\n", .{alsa.snd_strerror(@intCast(c_int, ret))});
+            _ = alsa.snd_pcm_prepare(sd.handle); // snd_pcm_recover()?
         }
 //        if (ret != nframes) {
 //            printf("OOPS: %s() - %d frames played out of %d\n", __func__, ret, nframes);
