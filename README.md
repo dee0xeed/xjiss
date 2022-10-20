@@ -65,4 +65,5 @@ Legend
 
 ## Links
 * [Introduction to Sound Programming with ALSA](https://www.linuxjournal.com/article/6735)
-* [A close look at ALSA](https://www.volkerschatz.com/noise/alsa.html)
+* [A Close Look at ALSA](https://www.volkerschatz.com/noise/alsa.html)
+* [Just Tuning](https://www.sfu.ca/sonic-studio-webdav/handbook/Just_Tuning.html)
