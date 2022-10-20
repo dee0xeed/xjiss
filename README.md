@@ -11,6 +11,31 @@ It was written as
 * make sure you have `libasound2-dev` and `libx11-dev` installed
 * `zig build`
 
+## How to run
+
+### Server mode
+
+`xhiss s <port>`
+
+### Client mode
+
+`xjiss c <host> <port>`
+
+## Controls
+
+* Esc - exit
+
+### Server mode only
+* F1 - decrease volume
+* F2 - increase volume
+* F3 - adjust timbre
+* F4 - adjust timbre
+* F5 - decrease attack
+* F6 - increase attack
+* F7 - decrease release
+* F8 - increase release
+* Space - toggle octaves
+
 ## Tone system
 
 ```
@@ -37,18 +62,6 @@ Legend
 3:2 - frequency ratio (pure/just fifth for this case)
 ```
 
-## Controls
-
-* Esc - exit
-* F1 - decrease volume
-* F2 - increase volume
-* F3 - adjust timbre
-* F4 - adjust timbre
-* F5 - decrease attack
-* F6 - increase attack
-* F7 - decrease release
-* F8 - increase release
-* Space - toggle octaves
 
 ## Links
 * [Introduction to Sound Programming with ALSA](https://www.linuxjournal.com/article/6735)
