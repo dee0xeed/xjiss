@@ -30,6 +30,7 @@ pub const StageMachine = struct {
     const StageMachineError = error {
         IsAlreadyRunning,
         HasNoStates,
+        StageHasNoReflexes,
     };
 
     const StageList = std.ArrayList(StageMachine.Stage);
