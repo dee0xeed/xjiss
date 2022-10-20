@@ -26,7 +26,7 @@ pub const Worker = struct {
 
     const M0_CONN = Message.M0;
     const M0_WORK = Message.M0;
-    const M1_WAIT = Message.M3;
+    const M1_WAIT = Message.M1;
 
     const WorkerData = struct {
         tm: EventSource,
@@ -68,6 +68,7 @@ pub const Worker = struct {
         work.setReflex(.sm, Message.M1, Reflex{.transition = wait});
 
         wait.setReflex(.tm, Message.T0, Reflex{.transition = conn});
+        wait.setReflex(.sm, Message.M0, Reflex{.action = &waitM0});
 
         me.data = me.allocator.create(WorkerData) catch unreachable;
         var wd = util.opaqPtrTo(me.data, *WorkerData);
@@ -136,5 +137,11 @@ pub const Worker = struct {
         var wd = util.opaqPtrTo(me.data, *WorkerData);
         os.close(wd.io.id);
         wd.tm.enable(&me.md.eq, .{2000}) catch unreachable;
+    }
+
+    // a key pressed but we are not connected
+    fn waitM0(_: *StageMachine, _: ?*StageMachine, _: ?*anyopaque) void {
+//        var wd = util.opaqPtrTo(me.data, *WorkerData);
+        print("not connected\n", .{});
     }
 };

@@ -311,12 +311,10 @@ pub const XjisGui = struct {
 
         const tn = gd.jis.key_to_tone_number_map[ks & 0xFF] orelse return false;
         if (.client == gd.mode) {
-            gd.cmd = @intCast(u8, tn) & 0x80;
+            gd.cmd = @intCast(u8, tn) | 0x80;
             gd.me.msgTo(gd.client, M0_SEND, &gd.cmd);
-        } else {
-            toneOn(gd, tn);
         }
-
+        toneOn(gd, tn);
         return false;
     }
 
@@ -353,9 +351,8 @@ pub const XjisGui = struct {
         if (.client == gd.mode) {
             gd.cmd = tn;
             gd.me.msgTo(gd.client, M0_SEND, &gd.cmd);
-        } else {
-            toneOff(gd, tn);
         }
+        toneOff(gd, tn);
         return false;
     }
 
