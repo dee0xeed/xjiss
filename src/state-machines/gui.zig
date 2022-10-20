@@ -31,6 +31,7 @@ const x11 = @cImport({
 pub const XjisGui = struct {
 
     const M0_WORK = Message.M0;
+    const M0_SEND = Message.M0;
     const win_width: c_int = 584;
     const win_height: c_int = 204;
     const key_width: c_int = 40;
@@ -57,6 +58,7 @@ pub const XjisGui = struct {
         eventHandlers: [x11.LASTEvent]?eventHandlerFnPtr,
         funcKeysHandlers: [256]?funcKeyHandlerFnPtr,
         mode: Mode,
+        me: *StageMachine,
         client: ?*StageMachine,
         cmd: u8,
     };
@@ -82,7 +84,7 @@ pub const XjisGui = struct {
         var gd = util.opaqPtrTo(me.data, *GuiData);
         gd.jis = jis;
         gd.mode = .server;
-        gd.buddy = null;
+        gd.client = null;
         gd.me = me;
 
         for (gd.eventHandlers) |*h| { h.* = null;}
@@ -104,12 +106,12 @@ pub const XjisGui = struct {
     }
 
     pub fn setMode(self: *StageMachine, mode: Mode) void {
-        var gd = util.opaqPtrTo(me.data, *GuiData);
+        var gd = util.opaqPtrTo(self.data, *GuiData);
         gd.mode = mode;
     }
 
     pub fn setBuddy(self: *StageMachine, other: *StageMachine) void {
-        var gd = util.opaqPtrTo(me.data, *GuiData);
+        var gd = util.opaqPtrTo(self.data, *GuiData);
         gd.client = other;
     }
 
@@ -309,8 +311,8 @@ pub const XjisGui = struct {
 
         const tn = gd.jis.key_to_tone_number_map[ks & 0xFF] orelse return false;
         if (.client == gd.mode) {
-            gd.cmd = tn & 0x80;
-            gd.me.msgTo(client, M0_SEND, &gd.cmd);
+            gd.cmd = @intCast(u8, tn) & 0x80;
+            gd.me.msgTo(gd.client, M0_SEND, &gd.cmd);
         } else {
             toneOn(gd, tn);
         }
@@ -320,15 +322,14 @@ pub const XjisGui = struct {
 
     fn toneOff(gd: *GuiData, tone_number: u6) void {
         const tone = &gd.jis.tones[tone_number];
-//        var tone  = &gd.jis.tones[n];
 
         if (.attack == tone.stage)
-            gd.jis.att_mask &= ~(@as(u64, 1) << (n & 0x3F));
+            gd.jis.att_mask &= ~(@as(u64, 1) << tone_number);
 
         tone.stage = .release;
         tone.is_active = false;
         tone.nper = 0;
-        gd.jis.rel_mask |= (@as(u64, 1) << n);
+        gd.jis.rel_mask |= (@as(u64, 1) << tone_number);
 
         updateKey(gd, tone_number);
         _ = x11.XFlush(gd.display);
@@ -351,9 +352,9 @@ pub const XjisGui = struct {
         const tn = gd.jis.key_to_tone_number_map[ks & 0xFF] orelse return false;
         if (.client == gd.mode) {
             gd.cmd = tn;
-            gd.me.msgTo(client, M0_SEND, &gd.cmd);
+            gd.me.msgTo(gd.client, M0_SEND, &gd.cmd);
         } else {
-            toneOn(gd, tn);
+            toneOff(gd, tn);
         }
         return false;
     }

@@ -34,6 +34,7 @@ pub const Worker = struct {
         host: []const u8,
         port: u16,
         addr: net.Address,
+        buf: [1]u8,
     };
 
     pub fn onHeap (
@@ -55,14 +56,17 @@ pub const Worker = struct {
         var wait = &me.stages.items[3];
 
         init.setReflex(.sm, Message.M0, Reflex{.transition = conn});
+
         conn.setReflex(.io, Message.D1, Reflex{.action = &connD1});
         conn.setReflex(.io, Message.D2, Reflex{.action = &connD2});
         conn.setReflex(.sm, Message.M0, Reflex{.transition = work});
         conn.setReflex(.sm, Message.M1, Reflex{.transition = wait});
+
+        work.setReflex(.sm, Message.M0, Reflex{.action = &workM0});
         work.setReflex(.io, Message.D1, Reflex{.action = &workD1});
         work.setReflex(.io, Message.D2, Reflex{.action = &workD2});
-//        work.setReflex(.sm, Message.M0, Reflex{.transition = recv});
         work.setReflex(.sm, Message.M1, Reflex{.transition = wait});
+
         wait.setReflex(.tm, Message.T0, Reflex{.transition = conn});
 
         me.data = me.allocator.create(WorkerData) catch unreachable;
@@ -102,16 +106,30 @@ pub const Worker = struct {
     }
 
     fn workEnter(me: *StageMachine) void {
-        var wd = util.opaqPtrTo(me.data, *WorkerData);
-        wd.io.enable();
+        // var wd = util.opaqPtrTo(me.data, *WorkerData);
+        _ = me;
     }
 
-    fn workD1(me: *StageMachine, _: ?*StageMachine, _: ?*anyopaque) void {
-        me.msgTo(me, M0_RECV, null);
+    // message from GUI machine
+    fn workM0(me: *StageMachine, _: ?*StageMachine, dptr: ?*anyopaque) void {
+        var wd = util.opaqPtrTo(me.data, *WorkerData);
+        const ptr = util.opaqPtrTo(dptr, *u8);
+        wd.buf[0] = ptr.*;
+        wd.io.enableOut(&me.md.eq) catch unreachable;
+    }
+
+    fn workD1(me: *StageMachine, _: ?*StageMachine, dptr: ?*anyopaque) void {
+        var wd = util.opaqPtrTo(me.data, *WorkerData);
+        var io = util.opaqPtrTo(dptr, *EventSource);
+
+        _ = os.write(io.id, wd.buf[0..]) catch {
+            me.msgTo(me, M1_WAIT, null);
+            return;
+        };
     }
 
     fn workD2(me: *StageMachine, _: ?*StageMachine, _: ?*anyopaque) void {
-        me.msgTo(me, M3_WAIT, null);
+        me.msgTo(me, M1_WAIT, null);
     }
 
     fn waitEnter(me: *StageMachine) void {

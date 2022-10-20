@@ -45,10 +45,10 @@ pub fn main() !void {
         try snd.run();
         var i: u8 = 0;
         var pool = try MachinePool.init(allocator, max_clients);
-        gui.setMode(.server);
+        Gui.setMode(gui, .server);
         while (i < max_clients) : (i += 1) {
             var server = try Server.onHeap(allocator, &md, &pool);
-            server.setBuddy(gui);
+            Server.setBuddy(server, gui);
             try server.run();
         }
         var reception = try Listener.onHeap(allocator, &md, port, &pool);
@@ -64,8 +64,8 @@ pub fn main() !void {
         const port = std.fmt.parseInt(u16, arg3, 10) catch 3333;
         var client = try Client.onHeap(allocator, &md, host, port);
         try client.run();
-        gui.setMode(.client);
-        gui.setBuddy(client);
+        Gui.setMode(gui, .client);
+        Gui.setBuddy(gui, client);
     } else {
         help();
         return;
