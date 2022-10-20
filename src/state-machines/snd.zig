@@ -155,14 +155,11 @@ pub const XjisSound = struct {
 
         var ret = alsa.snd_pcm_writei(sd.handle, sd.snd_buf.ptr, sd.nframes);
         if (ret < 0) {
-            print("snd_pcm_writei(): {s}\n", .{alsa.snd_strerror(@intCast(c_int, ret))});
+//            print("snd_pcm_writei(): {s}\n", .{alsa.snd_strerror(@intCast(c_int, ret))});
             me.msgTo(me, M0_FAIL, null);
             return;
-//            ret = alsa.snd_pcm_recover(sd.handle, @intCast(c_int, ret), 0);
-//            print("snd_pcm_recover(): {s}\n", .{alsa.snd_strerror(@intCast(c_int, ret))});
         } else if (ret != sd.nframes) {
-            print("snd_pcm_writei(): partial write, {}/{} frames\n", .{ret, sd.nframes});
-            // snd_pcm_prepare(handle);
+//            print("snd_pcm_writei(): partial write, {}/{} frames\n", .{ret, sd.nframes});
             me.msgTo(me, M0_FAIL, null);
             return;
         }
@@ -174,14 +171,11 @@ pub const XjisSound = struct {
     fn workD2(me: *StageMachine, _: ?*StageMachine, _: ?*anyopaque) void {
         var sd = util.opaqPtrTo(me.data, *SoundData);
         _ = sd;
-        print("D2!!!\n", .{});
         me.msgTo(me, M0_FAIL, null);
-        //const ret = alsa.snd_pcm_recover(sd.handle, @intCast(c_int, ret), 0);
-//        const ret = alsa.snd_pcm_prepare(sd.handle);
-//        print("snd_pcm_prepare(): {s}\n", .{alsa.snd_strerror(@intCast(c_int, ret))});
     }
 
     fn failEnter(me: *StageMachine) void {
+        print("An error occured, recovering...\n", .{});
         var sd = util.opaqPtrTo(me.data, *SoundData);
         _ = alsa.snd_pcm_close(sd.handle);
         initAlsa(sd);
