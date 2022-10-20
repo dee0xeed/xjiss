@@ -146,12 +146,13 @@ pub const XjisSound = struct {
         var sd = util.opaqPtrTo(me.data, *SoundData);
         var io = util.opaqPtrTo(dptr, *EventSource);
 
-        const ret = alsa.snd_pcm_writei(sd.handle, sd.snd_buf.ptr, sd.nframes);
+        var ret = alsa.snd_pcm_writei(sd.handle, sd.snd_buf.ptr, sd.nframes);
         if (ret < 0) {
             print("snd_pcm_writei(): {s}\n", .{alsa.snd_strerror(@intCast(c_int, ret))});
-            _ = alsa.snd_pcm_prepare(sd.handle); // snd_pcm_recover()?
-        }
-        if (ret != sd.nframes) {
+            //_ = alsa.snd_pcm_prepare(sd.handle); // snd_pcm_recover()?
+            ret = alsa.snd_pcm_recover(sd.handle, @intCast(c_int, ret), 0);
+            print("snd_pcm_recover(): {s}\n", .{alsa.snd_strerror(@intCast(c_int, ret))});
+        } else  if (ret != sd.nframes) {
             print("snd_pcm_writei(): partial write, {}/{} frames\n", .{ret, sd.nframes});
             // snd_pcm_prepare(handle);
         }
