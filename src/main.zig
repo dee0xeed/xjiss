@@ -29,7 +29,6 @@ pub fn main() !void {
     var allocator = std.heap.c_allocator;
     var md = try MessageDispatcher.onStack(allocator, 5);
     var jis = Jis.init();
-//    var mode: Gui.Mode = undefined;
     var gui = try Gui.onHeap(allocator, &md, &jis);
 
     if (3 == std.os.argv.len) {

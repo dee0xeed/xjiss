@@ -48,7 +48,7 @@ pub const Worker = struct {
         var me = try StageMachine.onHeap(a, md, "WORKER", 1);
         try me.addStage(Stage{.name = "INIT", .enter = &initEnter, .leave = null});
         try me.addStage(Stage{.name = "CONN", .enter = &connEnter, .leave = null});
-        try me.addStage(Stage{.name = "WORK", .enter = &workEnter, .leave = null});
+        try me.addStage(Stage{.name = "WORK", .enter = null, .leave = null});
         try me.addStage(Stage{.name = "WAIT", .enter = &waitEnter, .leave = null});
 
         var init = &me.stages.items[0];
@@ -108,11 +108,6 @@ pub const Worker = struct {
         me.msgTo(me, M1_WAIT, null);
     }
 
-    fn workEnter(me: *StageMachine) void {
-        // var wd = util.opaqPtrTo(me.data, *WorkerData);
-        _ = me;
-    }
-
     // message from GUI machine
     fn workM0(me: *StageMachine, _: ?*StageMachine, dptr: ?*anyopaque) void {
         var wd = util.opaqPtrTo(me.data, *WorkerData);
@@ -143,6 +138,7 @@ pub const Worker = struct {
 
     fn waitEnter(me: *StageMachine) void {
         var wd = util.opaqPtrTo(me.data, *WorkerData);
+        print("connection lost\n", .{});
         os.close(wd.io.id);
         wd.tm.enable(&me.md.eq, .{2000}) catch unreachable;
     }
