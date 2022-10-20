@@ -60,7 +60,6 @@ pub const XjisGui = struct {
         mode: Mode,
         me: *StageMachine,
         client: ?*StageMachine,
-//        cmd: u8,
     };
 
     pub fn onHeap(a: Allocator, md: *MessageDispatcher, jis: *Jis) !*StageMachine {
@@ -75,9 +74,7 @@ pub const XjisGui = struct {
         init.setReflex(.sm, Message.M0, Reflex{.transition = work});
         work.setReflex(.io, Message.D0, Reflex{.action = &workD0});
         work.setReflex(.io, Message.D2, Reflex{.action = &workD2});
-        // from server, tone off
         work.setReflex(.sm, Message.M0, Reflex{.action = &workM0});
-        // from server, tone on
         work.setReflex(.sm, Message.M1, Reflex{.action = &workM1});
 
         me.data = me.allocator.create(GuiData) catch unreachable;
@@ -417,19 +414,19 @@ pub const XjisGui = struct {
         io.enable(&me.md.eq, .{}) catch unreachable;
     }
 
-    fn workD2(me: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
-        _ = me;
-        _ = src;
-        var io = util.opaqPtrTo(dptr, *EventSource);
-        _ = io;
+    fn workD2(me: *StageMachine, _: ?*StageMachine, _: ?*anyopaque) void {
+        print("connection to X-server lost\n", .{});
+        me.msgTo(null, Message.M0, null);
     }
 
+    // message from some server, turn a tone off
     fn workM0(me: *StageMachine, _: ?*StageMachine, dptr: ?*anyopaque) void {
         var gd = util.opaqPtrTo(me.data, *GuiData);
         var tn = util.opaqPtrTo(dptr, *u8);
         toneOff(gd, @intCast(u6, tn.*));
     }
 
+    // message from some server, turn a tone on
     fn workM1(me: *StageMachine, _: ?*StageMachine, dptr: ?*anyopaque) void {
         var gd = util.opaqPtrTo(me.data, *GuiData);
         var tn = util.opaqPtrTo(dptr, *u8);

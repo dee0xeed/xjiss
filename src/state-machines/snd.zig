@@ -155,11 +155,11 @@ pub const XjisSound = struct {
 
         var ret = alsa.snd_pcm_writei(sd.handle, sd.snd_buf.ptr, sd.nframes);
         if (ret < 0) {
-//            print("snd_pcm_writei(): {s}\n", .{alsa.snd_strerror(@intCast(c_int, ret))});
+            print("snd_pcm_writei(): {s}\n", .{alsa.snd_strerror(@intCast(c_int, ret))});
             me.msgTo(me, M0_FAIL, null);
             return;
         } else if (ret != sd.nframes) {
-//            print("snd_pcm_writei(): partial write, {}/{} frames\n", .{ret, sd.nframes});
+            print("snd_pcm_writei(): partial write, {}/{} frames\n", .{ret, sd.nframes});
             me.msgTo(me, M0_FAIL, null);
             return;
         }

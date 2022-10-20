@@ -21,7 +21,6 @@ const Reflex = Stage.Reflex;
 
 const MachinePool = @import("../machine-pool.zig").MachinePool;
 const Client = @import("Client.zig").Client;
-//const Context =  @import("../common-sm/context.zig").IoContext;
 const util = @import("../util.zig");
 
 pub const Worker = struct {
@@ -29,7 +28,6 @@ pub const Worker = struct {
     const M0_IDLE = Message.M0;
     const M0_RECV = Message.M0;
     const M0_GONE = Message.M0;
-//    const M2_FAIL = Message.M2;
     const M1_TONE_ON = Message.M1;
     const M0_TONE_OFF = Message.M0;
     var number: u16 = 0;
@@ -118,7 +116,6 @@ pub const Worker = struct {
         const byte = cmd[0];
         wd.tone_number = byte & 0x3F;
         const pressed: bool = ((byte & 0x80) == 0x80);
-//        print("tn = {}, pressed = {}\n", .{wd.tone_number, pressed});
         if (pressed) {
             me.msgTo(wd.gui, M1_TONE_ON, &wd.tone_number);
         } else {
