@@ -169,8 +169,6 @@ pub const XjisSound = struct {
     }
 
     fn workD2(me: *StageMachine, _: ?*StageMachine, _: ?*anyopaque) void {
-        var sd = util.opaqPtrTo(me.data, *SoundData);
-        _ = sd;
         me.msgTo(me, M0_FAIL, null);
     }
 
