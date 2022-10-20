@@ -118,7 +118,7 @@ pub const Worker = struct {
         const byte = cmd[0];
         wd.tone_number = byte & 0x3F;
         const pressed: bool = ((byte & 0x80) == 0x80);
-        print("tn = {}, pressed = {}\n", .{wd.tone_number, pressed});
+//        print("tn = {}, pressed = {}\n", .{wd.tone_number, pressed});
         if (pressed) {
             me.msgTo(wd.gui, M1_TONE_ON, &wd.tone_number);
         } else {
