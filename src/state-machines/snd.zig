@@ -31,6 +31,8 @@ const alsa = @cImport({
 pub const XjisSound = struct {
 
     const M0_WORK = Message.M0;
+    const M0_FAIL = Message.M0;
+
     const sampling_rate: c_int = 48000;
     const latency = 20000; // usec
     // const device = "hw:0,0";
@@ -52,13 +54,17 @@ pub const XjisSound = struct {
         var me = try StageMachine.onHeap(a, md, "SND", 1);
         try me.addStage(Stage{.name = "INIT", .enter = &initEnter, .leave = null});
         try me.addStage(Stage{.name = "WORK", .enter = &workEnter, .leave = null});
+        try me.addStage(Stage{.name = "FAIL", .enter = &failEnter, .leave = null});
 
         var init = &me.stages.items[0];
         var work = &me.stages.items[1];
+        var fail = &me.stages.items[2];
 
         init.setReflex(.sm, Message.M0, Reflex{.transition = work});
         work.setReflex(.io, Message.D1, Reflex{.action = &workD1});
         work.setReflex(.io, Message.D2, Reflex{.action = &workD2});
+        work.setReflex(.sm, Message.M0, Reflex{.transition = fail});
+        fail.setReflex(.sm, Message.M0, Reflex{.transition = work});
 
         me.data = me.allocator.create(SoundData) catch unreachable;
         var sd = util.opaqPtrTo(me.data, *SoundData);
@@ -66,7 +72,7 @@ pub const XjisSound = struct {
         return me;
     }
 
-    fn initAlsa(sd: *SoundData, a: Allocator) void {
+    fn initAlsa(sd: *SoundData) void {
         var buf: alsa.snd_pcm_uframes_t = undefined;
         var per: alsa.snd_pcm_uframes_t = undefined;
         var ret: c_int = 0;
@@ -102,12 +108,13 @@ pub const XjisSound = struct {
         _ = alsa.snd_pcm_dump(sd.handle, sd.output);
         _ = alsa.snd_pcm_get_params(sd.handle, &buf, &per);
         sd.nframes = per;
-        sd.snd_buf = a.alloc(i16, 2 * sd.nframes) catch unreachable;
-        mem.set(i16, sd.snd_buf, 0);
     }
 
     fn initEnter(me: *StageMachine) void {
-        initAlsa(util.opaqPtrTo(me.data, *SoundData), me.allocator);
+        var sd = util.opaqPtrTo(me.data, *SoundData);
+        initAlsa(sd);
+        sd.snd_buf = me.allocator.alloc(i16, 2 * sd.nframes) catch unreachable;
+        mem.set(i16, sd.snd_buf, 0);
         me.msgTo(me, M0_WORK, null);
     }
 
@@ -149,12 +156,15 @@ pub const XjisSound = struct {
         var ret = alsa.snd_pcm_writei(sd.handle, sd.snd_buf.ptr, sd.nframes);
         if (ret < 0) {
             print("snd_pcm_writei(): {s}\n", .{alsa.snd_strerror(@intCast(c_int, ret))});
-            //_ = alsa.snd_pcm_prepare(sd.handle); // snd_pcm_recover()?
-            ret = alsa.snd_pcm_recover(sd.handle, @intCast(c_int, ret), 0);
-            print("snd_pcm_recover(): {s}\n", .{alsa.snd_strerror(@intCast(c_int, ret))});
-        } else  if (ret != sd.nframes) {
+            me.msgTo(me, M0_FAIL, null);
+            return;
+//            ret = alsa.snd_pcm_recover(sd.handle, @intCast(c_int, ret), 0);
+//            print("snd_pcm_recover(): {s}\n", .{alsa.snd_strerror(@intCast(c_int, ret))});
+        } else if (ret != sd.nframes) {
             print("snd_pcm_writei(): partial write, {}/{} frames\n", .{ret, sd.nframes});
             // snd_pcm_prepare(handle);
+            me.msgTo(me, M0_FAIL, null);
+            return;
         }
 
         sd.jis.generateWaveForm(sd.snd_buf);
@@ -164,5 +174,17 @@ pub const XjisSound = struct {
     fn workD2(me: *StageMachine, _: ?*StageMachine, _: ?*anyopaque) void {
         var sd = util.opaqPtrTo(me.data, *SoundData);
         _ = sd;
+        print("D2!!!\n", .{});
+        me.msgTo(me, M0_FAIL, null);
+        //const ret = alsa.snd_pcm_recover(sd.handle, @intCast(c_int, ret), 0);
+//        const ret = alsa.snd_pcm_prepare(sd.handle);
+//        print("snd_pcm_prepare(): {s}\n", .{alsa.snd_strerror(@intCast(c_int, ret))});
+    }
+
+    fn failEnter(me: *StageMachine) void {
+        var sd = util.opaqPtrTo(me.data, *SoundData);
+        _ = alsa.snd_pcm_close(sd.handle);
+        initAlsa(sd);
+        me.msgTo(me, M0_WORK, null);
     }
 };
