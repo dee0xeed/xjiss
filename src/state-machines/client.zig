@@ -133,12 +133,12 @@ pub const Worker = struct {
     }
 
     fn workD2(me: *StageMachine, _: ?*StageMachine, _: ?*anyopaque) void {
+        print("connection lost\n", .{});
         me.msgTo(me, M1_WAIT, null);
     }
 
     fn waitEnter(me: *StageMachine) void {
         var wd = util.opaqPtrTo(me.data, *WorkerData);
-        print("connection lost\n", .{});
         os.close(wd.io.id);
         wd.tm.enable(&me.md.eq, .{2000}) catch unreachable;
     }
