@@ -30,7 +30,7 @@ pub fn main() !void {
     var md = try MessageDispatcher.onStack(allocator, 5);
     var jis = Jis.init();
 //    var mode: Gui.Mode = undefined;
-    var gui = try Gui.onHeap(allocator, &md, &jis, mode);
+    var gui = try Gui.onHeap(allocator, &md, &jis);
 
     if (3 == std.os.argv.len) {
         // server mode
@@ -45,9 +45,10 @@ pub fn main() !void {
         try snd.run();
         var i: u8 = 0;
         var pool = try MachinePool.init(allocator, max_clients);
-        gui.mode = .server;
+        gui.setMode(.server);
         while (i < max_clients) : (i += 1) {
-            var server = try Server.onHeap(allocator, &md, &pool, gui);
+            var server = try Server.onHeap(allocator, &md, &pool);
+            server.setBuddy(gui);
             try server.run();
         }
         var reception = try Listener.onHeap(allocator, &md, port, &pool);
@@ -63,7 +64,8 @@ pub fn main() !void {
         const port = std.fmt.parseInt(u16, arg3, 10) catch 3333;
         var client = try Client.onHeap(allocator, &md, host, port);
         try client.run();
-        gui.mode = .client;
+        gui.setMode(.client);
+        gui.setBuddy(client);
     } else {
         help();
         return;

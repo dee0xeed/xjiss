@@ -25,12 +25,8 @@ const util = @import("../util.zig");
 pub const Worker = struct {
 
     const M0_CONN = Message.M0;
-    const M0_SEND = Message.M0;
-    const M0_RECV = Message.M0;
-    const M0_TWIX = Message.M0;
-    const M1_WORK = Message.M1;
-    const M3_WAIT = Message.M3;
-    const max_bytes = 64;
+    const M0_WORK = Message.M0;
+    const M1_WAIT = Message.M3;
 
     const WorkerData = struct {
         tm: EventSource,
@@ -50,7 +46,7 @@ pub const Worker = struct {
         var me = try StageMachine.onHeap(a, md, "WORKER", 1);
         try me.addStage(Stage{.name = "INIT", .enter = &initEnter, .leave = null});
         try me.addStage(Stage{.name = "CONN", .enter = &connEnter, .leave = null});
-        try me.addStage(Stage{.name = "WORK", .enter = &sendEnter, .leave = null});
+        try me.addStage(Stage{.name = "WORK", .enter = &workEnter, .leave = null});
         try me.addStage(Stage{.name = "WAIT", .enter = &waitEnter, .leave = null});
 
         var init = &me.stages.items[0];
@@ -87,7 +83,6 @@ pub const Worker = struct {
     fn connEnter(me: *StageMachine) void {
         var wd = util.opaqPtrTo(me.data, *WorkerData);
         wd.io.getId(.{}) catch unreachable;
-        pd.ctx.buf = pd.request[0..0];
         wd.io.startConnect(&wd.addr) catch unreachable;
         wd.io.enableOut(&me.md.eq) catch unreachable;
     }
@@ -108,56 +103,20 @@ pub const Worker = struct {
 
     fn workEnter(me: *StageMachine) void {
         var wd = util.opaqPtrTo(me.data, *WorkerData);
-        pd.ctx.buf = std.fmt.bufPrint(&pd.request, "{s}-{}\n", .{me.name, pd.request_seqn}) catch unreachable;
-        me.msgTo(tx, M1_WORK, &pd.ctx);
+        wd.io.enable();
     }
 
-    fn sendD1(me: *StageMachine, _: ?*StageMachine, _: ?*anyopaque) void {
+    fn workD1(me: *StageMachine, _: ?*StageMachine, _: ?*anyopaque) void {
         me.msgTo(me, M0_RECV, null);
     }
 
-    fn sendD2(me: *StageMachine, _: ?*StageMachine, _: ?*anyopaque) void {
+    fn workD2(me: *StageMachine, _: ?*StageMachine, _: ?*anyopaque) void {
         me.msgTo(me, M3_WAIT, null);
-    }
-
-    fn myNeedMore(buf: []u8) bool {
-        if (0x0A == buf[buf.len - 1])
-            return false;
-        return true;
-    }
-
-    fn recvEnter(me: *StageMachine) void {
-        var pd = util.opaqPtrTo(me.data, *WorkerData);
-        var rx = pd.rxp.get() orelse {
-            me.msgTo(me, M3_WAIT, null);
-            return;
-        };
-        pd.ctx.needMore = &myNeedMore;
-        pd.ctx.timeout = 10000; // msec
-        pd.ctx.buf = pd.reply[0..];
-        me.msgTo(rx, M1_WORK, &pd.ctx);
-    }
-
-    // message from RX machine (success)
-    fn recvM1(me: *StageMachine, _: ?*StageMachine, _: ?*anyopaque) void {
-        var pd = util.opaqPtrTo(me.data, *WorkerData);
-        print("reply: {s}", .{pd.reply[0..pd.ctx.cnt]});
-        me.msgTo(me, M0_TWIX, null);
-    }
-
-    // message from RX machine (failure)
-    fn recvM2(me: *StageMachine, _: ?*StageMachine, _: ?*anyopaque) void {
-        me.msgTo(me, M3_WAIT, null);
-    }
-
-    fn twixEnter(me: *StageMachine) void {
-        var pd = util.opaqPtrTo(me.data, *WorkerData);
-        pd.tm.enable(&me.md.eq, .{500}) catch unreachable;
     }
 
     fn waitEnter(me: *StageMachine) void {
-        var pd = util.opaqPtrTo(me.data, *WorkerData);
-        os.close(pd.io.id);
-        pd.tm.enable(&me.md.eq, .{5000}) catch unreachable;
+        var wd = util.opaqPtrTo(me.data, *WorkerData);
+        os.close(wd.io.id);
+        wd.tm.enable(&me.md.eq, .{2000}) catch unreachable;
     }
 };

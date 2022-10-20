@@ -57,9 +57,11 @@ pub const XjisGui = struct {
         eventHandlers: [x11.LASTEvent]?eventHandlerFnPtr,
         funcKeysHandlers: [256]?funcKeyHandlerFnPtr,
         mode: Mode,
+        client: ?*StageMachine,
+        cmd: u8,
     };
 
-    pub fn onHeap(a: Allocator, md: *MessageDispatcher, jis: *Jis, mode: Mode) !*StageMachine {
+    pub fn onHeap(a: Allocator, md: *MessageDispatcher, jis: *Jis) !*StageMachine {
 
         var me = try StageMachine.onHeap(a, md, "GUI", 1);
         try me.addStage(Stage{.name = "INIT", .enter = &initEnter, .leave = null});
@@ -79,7 +81,9 @@ pub const XjisGui = struct {
         me.data = me.allocator.create(GuiData) catch unreachable;
         var gd = util.opaqPtrTo(me.data, *GuiData);
         gd.jis = jis;
-        gd.mode = mode;
+        gd.mode = .server;
+        gd.buddy = null;
+        gd.me = me;
 
         for (gd.eventHandlers) |*h| { h.* = null;}
         gd.eventHandlers[x11.Expose] = &handleExpose;
@@ -90,13 +94,23 @@ pub const XjisGui = struct {
         for (gd.funcKeysHandlers) |*h| { h.* = null;}
         gd.funcKeysHandlers[x11.XK_F1 & 0xFF] = &decreaseVolume;
         gd.funcKeysHandlers[x11.XK_F2 & 0xFF] = &increaseVolume;
-        gd.funcKeysHandlers[x11.XK_F3 & 0xFF] = &xjiss_on_F3;
-        gd.funcKeysHandlers[x11.XK_F4 & 0xFF] = &xjiss_on_F4;
-        gd.funcKeysHandlers[x11.XK_F5 & 0xFF] = &xjiss_on_F5;
-        gd.funcKeysHandlers[x11.XK_F6 & 0xFF] = &xjiss_on_F6;
-        gd.funcKeysHandlers[x11.XK_F7 & 0xFF] = &xjiss_on_F7;
-        gd.funcKeysHandlers[x11.XK_F8 & 0xFF] = &xjiss_on_F8;
+        gd.funcKeysHandlers[x11.XK_F3 & 0xFF] = &onF3;
+        gd.funcKeysHandlers[x11.XK_F4 & 0xFF] = &onF4;
+        gd.funcKeysHandlers[x11.XK_F5 & 0xFF] = &onF5;
+        gd.funcKeysHandlers[x11.XK_F6 & 0xFF] = &onF6;
+        gd.funcKeysHandlers[x11.XK_F7 & 0xFF] = &onF7;
+        gd.funcKeysHandlers[x11.XK_F8 & 0xFF] = &onF8;
         return me;
+    }
+
+    pub fn setMode(self: *StageMachine, mode: Mode) void {
+        var gd = util.opaqPtrTo(me.data, *GuiData);
+        gd.mode = mode;
+    }
+
+    pub fn setBuddy(self: *StageMachine, other: *StageMachine) void {
+        var gd = util.opaqPtrTo(me.data, *GuiData);
+        gd.client = other;
     }
 
     fn initX11(gd: *GuiData) !void {
@@ -168,7 +182,7 @@ pub const XjisGui = struct {
         // P p p p p ... R
         // X server adds "release" after each autorepeated "press":
         // P r p r p r p R
-        // But we do not want to have it like this
+        // we do not want to have it like this here
         // after XkbSetDetectableAutoRepeat(1) we again have
         // P p p p p ... R
         const dar = x11.XkbSetDetectableAutoRepeat(gd.display, 1, null);
@@ -206,7 +220,7 @@ pub const XjisGui = struct {
         return false;
     }
 
-    fn xjiss_on_F3(jis: *Jis) bool {
+    fn onF3(jis: *Jis) bool {
         // decrease sine fall off moment
         if (jis.timbre > 0.02)
             jis.timbre -= 0.01;
@@ -214,7 +228,7 @@ pub const XjisGui = struct {
         return false;
     }
 
-    fn xjiss_on_F4(jis: *Jis) bool {
+    fn onF4(jis: *Jis) bool {
         // increase sine fall off moment
         if (jis.timbre < 1.0)
             jis.timbre += 0.01;
@@ -222,7 +236,7 @@ pub const XjisGui = struct {
         return false;
     }
 
-    fn xjiss_on_F5(jis: *Jis) bool {
+    fn onF5(jis: *Jis) bool {
         const delta: u32 = if (jis.att < 100) 1 else 10;
         // decrease attack stage duration
         if (0 == jis.att_mask) {
@@ -233,7 +247,7 @@ pub const XjisGui = struct {
         return false;
     }
 
-    fn xjiss_on_F6(jis: *Jis) bool {
+    fn onF6(jis: *Jis) bool {
         const delta: u32 = if (jis.att < 100) 1 else 10;
         // increase attack stage duration
         if (0 == jis.att_mask) {
@@ -244,7 +258,7 @@ pub const XjisGui = struct {
         return false;
     }
 
-    fn xjiss_on_F7(jis: *Jis) bool {
+    fn onF7(jis: *Jis) bool {
         const delta: u32 = if (jis.rel < 100) 1 else 10;
         // decrease release stage duration
         if (0 == jis.rel_mask) {
@@ -255,7 +269,7 @@ pub const XjisGui = struct {
         return false;
     }
 
-    fn xjiss_on_F8(jis: *Jis) bool {
+    fn onF8(jis: *Jis) bool {
         const delta: u32 = if (jis.rel < 100) 1 else 10;
         // increase release stage duration
         if (0 == jis.rel_mask) {
@@ -294,7 +308,13 @@ pub const XjisGui = struct {
         }
 
         const tn = gd.jis.key_to_tone_number_map[ks & 0xFF] orelse return false;
-        toneOn(gd, tn);
+        if (.client == gd.mode) {
+            gd.cmd = tn & 0x80;
+            gd.me.msgTo(client, M0_SEND, &gd.cmd);
+        } else {
+            toneOn(gd, tn);
+        }
+
         return false;
     }
 
@@ -329,7 +349,12 @@ pub const XjisGui = struct {
             return false;
 
         const tn = gd.jis.key_to_tone_number_map[ks & 0xFF] orelse return false;
-        toneOff(gd, tn);
+        if (.client == gd.mode) {
+            gd.cmd = tn;
+            gd.me.msgTo(client, M0_SEND, &gd.cmd);
+        } else {
+            toneOn(gd, tn);
+        }
         return false;
     }
 

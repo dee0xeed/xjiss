@@ -30,8 +30,8 @@ pub const Worker = struct {
     const M0_RECV = Message.M0;
     const M0_GONE = Message.M0;
     const M2_FAIL = Message.M2;
-    const M1_ON = Message.M0;
-    const M1_OF = Message.M1;
+    const M1_TONE_ON = Message.M1;
+    const M0_TONE_OFF = Message.M0;
     var number: u16 = 0;
 
     const WorkerData = struct {
@@ -43,7 +43,7 @@ pub const Worker = struct {
         tone_number: u8,
     };
 
-    pub fn onHeap (a: Allocator, md: *MessageDispatcher, pool: *MachinePool, gui: *StageMachine) !*StageMachine {
+    pub fn onHeap (a: Allocator, md: *MessageDispatcher, pool: *MachinePool) !*StageMachine {
 
         number += 1;
         var me = try StageMachine.onHeap(a, md, "SERVER", number);
@@ -64,8 +64,12 @@ pub const Worker = struct {
         me.data = me.allocator.create(WorkerData) catch unreachable;
         var wd = util.opaqPtrTo(me.data, *WorkerData);
         wd.pool = pool;
-        wd.gui = gui;
         return me;
+    }
+
+    pub fn setBuddy(self: *StageMachine, other: *StageMachine) void {
+        var wd = util.opaqPtrTo(self.data, *WorkerData);
+        wd.gui = other;
     }
 
     fn initEnter(me: *StageMachine) void {
@@ -114,9 +118,9 @@ pub const Worker = struct {
         wd.tone_number = byte & 0x3F;
         const pressed: bool = ((byte & 0x80) == 0x80);
         if (pressed) {
-            me.msgTo(wd.gui, M1_ON, &wd.tone_number);
+            me.msgTo(wd.gui, M1_TONE_ON, &wd.tone_number);
         } else {
-            me.msgTo(wd.gui, M0_OF, &wd.tone_number);
+            me.msgTo(wd.gui, M0_TONE_OFF, &wd.tone_number);
         }
         io.enable(&me.md.eq, .{}) catch unreachable;
     }
