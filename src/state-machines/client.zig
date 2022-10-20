@@ -34,7 +34,8 @@ pub const Worker = struct {
         host: []const u8,
         port: u16,
         addr: net.Address,
-        buf: [1]u8,
+        buf: [16]u8,
+        cnt: usize,
     };
 
     pub fn onHeap (
@@ -74,6 +75,7 @@ pub const Worker = struct {
         var wd = util.opaqPtrTo(me.data, *WorkerData);
         wd.host = host;
         wd.port = port;
+        wd.cnt = 0;
         return me;
     }
 
@@ -114,8 +116,9 @@ pub const Worker = struct {
     // message from GUI machine
     fn workM0(me: *StageMachine, _: ?*StageMachine, dptr: ?*anyopaque) void {
         var wd = util.opaqPtrTo(me.data, *WorkerData);
-        const ptr = util.opaqPtrTo(dptr, *u8);
-        wd.buf[0] = ptr.*;
+        const cmd = @ptrToInt(dptr) - 1;
+        wd.buf[wd.cnt] = @intCast(u8, cmd);
+        wd.cnt += 1;
         wd.io.enableOut(&me.md.eq) catch unreachable;
     }
 
@@ -123,10 +126,15 @@ pub const Worker = struct {
         var wd = util.opaqPtrTo(me.data, *WorkerData);
         var io = util.opaqPtrTo(dptr, *EventSource);
 
-        _ = os.write(io.id, wd.buf[0..]) catch {
-            me.msgTo(me, M1_WAIT, null);
-            return;
-        };
+        var i: usize = 0;
+        while (wd.cnt > 0) {
+            _ = os.write(io.id, wd.buf[i..i+1]) catch {
+                me.msgTo(me, M1_WAIT, null);
+                return;
+            };
+            i += 1;
+            wd.cnt -= 1;
+        }
     }
 
     fn workD2(me: *StageMachine, _: ?*StageMachine, _: ?*anyopaque) void {

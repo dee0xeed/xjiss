@@ -60,7 +60,7 @@ pub const XjisGui = struct {
         mode: Mode,
         me: *StageMachine,
         client: ?*StageMachine,
-        cmd: u8,
+//        cmd: u8,
     };
 
     pub fn onHeap(a: Allocator, md: *MessageDispatcher, jis: *Jis) !*StageMachine {
@@ -311,8 +311,8 @@ pub const XjisGui = struct {
 
         const tn = gd.jis.key_to_tone_number_map[ks & 0xFF] orelse return false;
         if (.client == gd.mode) {
-            gd.cmd = @intCast(u8, tn) | 0x80;
-            gd.me.msgTo(gd.client, M0_SEND, &gd.cmd);
+            const cmd = @intCast(u8, tn + 1) | 0x80;
+            gd.me.msgTo(gd.client, M0_SEND, @intToPtr(*anyopaque, cmd));
         }
         toneOn(gd, tn);
         return false;
@@ -349,8 +349,8 @@ pub const XjisGui = struct {
 
         const tn = gd.jis.key_to_tone_number_map[ks & 0xFF] orelse return false;
         if (.client == gd.mode) {
-            gd.cmd = tn;
-            gd.me.msgTo(gd.client, M0_SEND, &gd.cmd);
+            const cmd = tn + 1;
+            gd.me.msgTo(gd.client, M0_SEND, @intToPtr(*anyopaque, cmd));
         }
         toneOff(gd, tn);
         return false;
