@@ -298,6 +298,22 @@ pub const XjisGui = struct {
         return false;
     }
 
+    fn toneOff(gd: *GuiData, tone_number: u6) void {
+        const tone = &gd.jis.tones[tone_number];
+//        var tone  = &gd.jis.tones[n];
+
+        if (.attack == tone.stage)
+            gd.jis.att_mask &= ~(@as(u64, 1) << (n & 0x3F));
+
+        tone.stage = .release;
+        tone.is_active = false;
+        tone.nper = 0;
+        gd.jis.rel_mask |= (@as(u64, 1) << n);
+
+        updateKey(gd, tone_number);
+        _ = x11.XFlush(gd.display);
+    }
+
     fn handleKeyRelease(xe: *x11.XEvent, gd: *GuiData) bool {
 
         const ks = x11.XLookupKeysym(&xe.xkey, 0);
@@ -312,21 +328,8 @@ pub const XjisGui = struct {
         if ((ks & 0xFF00) != 0)
             return false;
 
-        const k = ks & 0x00FF;
-        const n = gd.jis.key_to_tone_number_map[k] orelse return false;
-        var tone  = &gd.jis.tones[n];
-
-        if (.attack == tone.stage)
-            gd.jis.att_mask &= ~(@as(u64, 1) << (n & 0x3F));
-
-        tone.stage = .release;
-        tone.is_active = false;
-        tone.nper = 0;
-        gd.jis.rel_mask |= (@as(u64, 1) << n);
-
-        updateKey(gd, n);
-        _ = x11.XFlush(gd.display);
-
+        const tn = gd.jis.key_to_tone_number_map[ks & 0xFF] orelse return false;
+        toneOff(gd, tn);
         return false;
     }
 

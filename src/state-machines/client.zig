@@ -31,15 +31,8 @@ pub const Worker = struct {
     const M1_WORK = Message.M1;
     const M3_WAIT = Message.M3;
     const max_bytes = 64;
-    var number: u16 = 0;
 
     const WorkerData = struct {
-        rxp: *MachinePool,
-        txp: *MachinePool,
-        request: [max_bytes]u8,
-        request_seqn: u32,
-        reply: [max_bytes]u8,
-        ctx: Context,
         tm: EventSource,
         io: EventSource,
         host: []const u8,
@@ -50,115 +43,80 @@ pub const Worker = struct {
     pub fn onHeap (
         a: Allocator,
         md: *MessageDispatcher,
-        rx_pool: *MachinePool,
-        tx_pool: *MachinePool,
         host: []const u8,
         port: u16,
     ) !*StageMachine {
 
-        number += 1;
-        var me = try StageMachine.onHeap(a, md, "WORKER", number);
+        var me = try StageMachine.onHeap(a, md, "WORKER", 1);
         try me.addStage(Stage{.name = "INIT", .enter = &initEnter, .leave = null});
         try me.addStage(Stage{.name = "CONN", .enter = &connEnter, .leave = null});
-        try me.addStage(Stage{.name = "SEND", .enter = &sendEnter, .leave = null});
-        try me.addStage(Stage{.name = "RECV", .enter = &recvEnter, .leave = null});
-        try me.addStage(Stage{.name = "TWIX", .enter = &twixEnter, .leave = null});
+        try me.addStage(Stage{.name = "WORK", .enter = &sendEnter, .leave = null});
         try me.addStage(Stage{.name = "WAIT", .enter = &waitEnter, .leave = null});
 
         var init = &me.stages.items[0];
         var conn = &me.stages.items[1];
-        var send = &me.stages.items[2];
-        var recv = &me.stages.items[3];
-        var twix = &me.stages.items[4];
-        var wait = &me.stages.items[5];
+        var work = &me.stages.items[2];
+        var wait = &me.stages.items[3];
 
         init.setReflex(.sm, Message.M0, Reflex{.transition = conn});
-
-        conn.setReflex(.sm, Message.M1, Reflex{.action = &connM1});
-        conn.setReflex(.sm, Message.M2, Reflex{.action = &connM2});
-        conn.setReflex(.sm, Message.M0, Reflex{.transition = send});
-        conn.setReflex(.sm, Message.M3, Reflex{.transition = wait});
-
-        send.setReflex(.sm, Message.M1, Reflex{.action = &sendM1});
-        send.setReflex(.sm, Message.M2, Reflex{.action = &sendM2});
-        send.setReflex(.sm, Message.M0, Reflex{.transition = recv});
-        send.setReflex(.sm, Message.M3, Reflex{.transition = wait});
-
-        recv.setReflex(.sm, Message.M1, Reflex{.action = &recvM1});
-        recv.setReflex(.sm, Message.M2, Reflex{.action = &recvM2});
-        recv.setReflex(.sm, Message.M0, Reflex{.transition = twix});
-        recv.setReflex(.sm, Message.M3, Reflex{.transition = wait});
-
-        twix.setReflex(.tm, Message.T0, Reflex{.transition = send});
+        conn.setReflex(.io, Message.D1, Reflex{.action = &connD1});
+        conn.setReflex(.io, Message.D2, Reflex{.action = &connD2});
+        conn.setReflex(.sm, Message.M0, Reflex{.transition = work});
+        conn.setReflex(.sm, Message.M1, Reflex{.transition = wait});
+        work.setReflex(.io, Message.D1, Reflex{.action = &workD1});
+        work.setReflex(.io, Message.D2, Reflex{.action = &workD2});
+//        work.setReflex(.sm, Message.M0, Reflex{.transition = recv});
+        work.setReflex(.sm, Message.M1, Reflex{.transition = wait});
         wait.setReflex(.tm, Message.T0, Reflex{.transition = conn});
 
         me.data = me.allocator.create(WorkerData) catch unreachable;
-        var pd = util.opaqPtrTo(me.data, *WorkerData);
-        pd.host = host;
-        pd.port = port;
-        pd.rxp = rx_pool;
-        pd.txp = tx_pool;
-        pd.request_seqn = 0;
+        var wd = util.opaqPtrTo(me.data, *WorkerData);
+        wd.host = host;
+        wd.port = port;
         return me;
     }
 
     fn initEnter(me: *StageMachine) void {
-        var pd = util.opaqPtrTo(me.data, *WorkerData);
-        pd.io = EventSource.init(me, .io, .csock, Message.D0);
-        me.initTimer(&pd.tm, Message.T0) catch unreachable;
-        pd.addr = net.Address.resolveIp(pd.host, pd.port) catch unreachable;
+        var wd = util.opaqPtrTo(me.data, *WorkerData);
+        wd.io = EventSource.init(me, .io, .csock, Message.D0);
+        me.initTimer(&wd.tm, Message.T0) catch unreachable;
+        wd.addr = net.Address.resolveIp(wd.host, wd.port) catch unreachable;
         me.msgTo(me, M0_CONN, null);
     }
 
     fn connEnter(me: *StageMachine) void {
-        var pd = util.opaqPtrTo(me.data, *WorkerData);
-        pd.io.getId(.{}) catch unreachable;
-
-        var tx = pd.txp.get() orelse {
-            me.msgTo(me, M3_WAIT, null);
-            return;
-        };
-
-        pd.ctx.fd = pd.io.id;
+        var wd = util.opaqPtrTo(me.data, *WorkerData);
+        wd.io.getId(.{}) catch unreachable;
         pd.ctx.buf = pd.request[0..0];
-        pd.io.startConnect(&pd.addr) catch unreachable;
-        me.msgTo(tx, M1_WORK, &pd.ctx);
+        wd.io.startConnect(&wd.addr) catch unreachable;
+        wd.io.enableOut(&me.md.eq) catch unreachable;
     }
 
-    // message from TX machine, connection established
-    fn connM1(me: *StageMachine, _: ?*StageMachine, _: ?*anyopaque) void {
-        var pd = util.opaqPtrTo(me.data, *WorkerData);
-        print("{s} : connected to '{s}:{}'\n", .{me.name, pd.host, pd.port});
-        me.msgTo(me, M0_SEND, null);
+    fn connD1(me: *StageMachine, _: ?*StageMachine, _: ?*anyopaque) void {
+        var wd = util.opaqPtrTo(me.data, *WorkerData);
+        print("connected to '{s}:{}'\n", .{wd.host, wd.port});
+        me.msgTo(me, M0_WORK, null);
     }
 
-    // message from TX machine, can't connect
-    fn connM2(me: *StageMachine, _: ?*StageMachine, _: ?*anyopaque) void {
-        var pd = util.opaqPtrTo(me.data, *WorkerData);
-        os.getsockoptError(pd.io.id) catch |err| {
-            print("{s} : can not connect to '{s}:{}': {}\n", .{me.name, pd.host, pd.port, err});
+    fn connD2(me: *StageMachine, _: ?*StageMachine, _: ?*anyopaque) void {
+        var wd = util.opaqPtrTo(me.data, *WorkerData);
+        os.getsockoptError(wd.io.id) catch |err| {
+            print("can not connect to '{s}:{}': {}\n", .{wd.host, wd.port, err});
         };
-        me.msgTo(me, M3_WAIT, null);
+        me.msgTo(me, M1_WAIT, null);
     }
 
-    fn sendEnter(me: *StageMachine) void {
-        var pd = util.opaqPtrTo(me.data, *WorkerData);
-        var tx = pd.txp.get() orelse {
-            me.msgTo(me, M3_WAIT, null);
-            return;
-        };
-        pd.request_seqn += 1;
+    fn workEnter(me: *StageMachine) void {
+        var wd = util.opaqPtrTo(me.data, *WorkerData);
         pd.ctx.buf = std.fmt.bufPrint(&pd.request, "{s}-{}\n", .{me.name, pd.request_seqn}) catch unreachable;
         me.msgTo(tx, M1_WORK, &pd.ctx);
     }
 
-    // message from TX machine (success)
-    fn sendM1(me: *StageMachine, _: ?*StageMachine, _: ?*anyopaque) void {
+    fn sendD1(me: *StageMachine, _: ?*StageMachine, _: ?*anyopaque) void {
         me.msgTo(me, M0_RECV, null);
     }
 
-    // message from TX machine (failure)
-    fn sendM2(me: *StageMachine, _: ?*StageMachine, _: ?*anyopaque) void {
+    fn sendD2(me: *StageMachine, _: ?*StageMachine, _: ?*anyopaque) void {
         me.msgTo(me, M3_WAIT, null);
     }
 

@@ -30,6 +30,8 @@ pub const Worker = struct {
     const M0_RECV = Message.M0;
     const M0_GONE = Message.M0;
     const M2_FAIL = Message.M2;
+    const M1_ON = Message.M0;
+    const M1_OF = Message.M1;
     var number: u16 = 0;
 
     const WorkerData = struct {
