@@ -15,7 +15,7 @@ It was written as
 
 ### Server mode
 
-`xhiss s <port>`
+`xjiss s <port>`
 
 ### Client mode
 
