@@ -60,11 +60,11 @@ pub const XjisSound = struct {
         var work = &me.stages.items[1];
         var fail = &me.stages.items[2];
 
-        init.setReflex(.sm, Message.M0, Reflex{.transition = work});
-        work.setReflex(.io, Message.D1, Reflex{.action = &workD1});
-        work.setReflex(.io, Message.D2, Reflex{.action = &workD2});
-        work.setReflex(.sm, Message.M0, Reflex{.transition = fail});
-        fail.setReflex(.sm, Message.M0, Reflex{.transition = work});
+        init.setReflex(.sm, Message.M0, .{.transition = work});
+        work.setReflex(.io, Message.D1, .{.action = &workD1});
+        work.setReflex(.io, Message.D2, .{.action = &workD2});
+        work.setReflex(.sm, Message.M0, .{.transition = fail});
+        fail.setReflex(.sm, Message.M0, .{.transition = work});
 
         me.data = me.allocator.create(SoundData) catch unreachable;
         var sd = util.opaqPtrTo(me.data, *SoundData);

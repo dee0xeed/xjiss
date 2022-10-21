@@ -10,5 +10,6 @@ pub fn build(b: *std.build.Builder) void {
     exe.linkSystemLibrary("asound");
     exe.setTarget(target);
     exe.setBuildMode(mode);
+//    const options = b.addOptions();
     exe.install();
 }

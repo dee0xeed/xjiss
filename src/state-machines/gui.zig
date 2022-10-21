@@ -71,11 +71,11 @@ pub const XjisGui = struct {
         var init = &me.stages.items[0];
         var work = &me.stages.items[1];
 
-        init.setReflex(.sm, Message.M0, Reflex{.transition = work});
-        work.setReflex(.io, Message.D0, Reflex{.action = &workD0});
-        work.setReflex(.io, Message.D2, Reflex{.action = &workD2});
-        work.setReflex(.sm, Message.M0, Reflex{.action = &workM0});
-        work.setReflex(.sm, Message.M1, Reflex{.action = &workM1});
+        init.setReflex(.sm, Message.M0, .{.transition = work});
+        work.setReflex(.io, Message.D0, .{.action = &workD0});
+        work.setReflex(.io, Message.D2, .{.action = &workD2});
+        work.setReflex(.sm, Message.M0, .{.action = &workM0});
+        work.setReflex(.sm, Message.M1, .{.action = &workM1});
 
         me.data = me.allocator.create(GuiData) catch unreachable;
         var gd = util.opaqPtrTo(me.data, *GuiData);
@@ -419,7 +419,7 @@ pub const XjisGui = struct {
         me.msgTo(null, Message.M0, null);
     }
 
-    // message from some server machine , turn a tone off
+    // message from some server machine, turn a tone off
     fn workM0(me: *StageMachine, _: ?*StageMachine, dptr: ?*anyopaque) void {
         var gd = util.opaqPtrTo(me.data, *GuiData);
         var tn = util.opaqPtrTo(dptr, *u8);

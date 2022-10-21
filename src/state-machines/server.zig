@@ -53,12 +53,12 @@ pub const Worker = struct {
         var idle = &me.stages.items[1];
         var recv = &me.stages.items[2];
 
-        init.setReflex(.sm, Message.M0, Reflex{.transition = idle});
-        idle.setReflex(.sm, Message.M1, Reflex{.action = &idleM1});
-        idle.setReflex(.sm, Message.M0, Reflex{.transition = recv});
-        recv.setReflex(.io, Message.D0, Reflex{.action = &recvD0});
-        recv.setReflex(.io, Message.D2, Reflex{.action = &recvD2});
-        recv.setReflex(.sm, Message.M0, Reflex{.transition = idle});
+        init.setReflex(.sm, Message.M0, .{.transition = idle});
+        idle.setReflex(.sm, Message.M1, .{.action = &idleM1});
+        idle.setReflex(.sm, Message.M0, .{.transition = recv});
+        recv.setReflex(.io, Message.D0, .{.action = &recvD0});
+        recv.setReflex(.io, Message.D2, .{.action = &recvD2});
+        recv.setReflex(.sm, Message.M0, .{.transition = idle});
 
         me.data = me.allocator.create(WorkerData) catch unreachable;
         var wd = util.opaqPtrTo(me.data, *WorkerData);

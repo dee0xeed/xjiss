@@ -49,11 +49,11 @@ pub const Listener = struct {
         var init = &me.stages.items[0];
         var work = &me.stages.items[1];
 
-        init.setReflex(.sm, Message.M0, Reflex{.transition = work});
-        work.setReflex(.io, Message.D0, Reflex{.action = &workD0});
-        work.setReflex(.sm, Message.M0, Reflex{.action = &workM0});
-        work.setReflex(.sg, Message.S0, Reflex{.action = &workS0});
-        work.setReflex(.sg, Message.S1, Reflex{.action = &workS0});
+        init.setReflex(.sm, Message.M0, .{.transition = work});
+        work.setReflex(.io, Message.D0, .{.action = &workD0});
+        work.setReflex(.sm, Message.M0, .{.action = &workM0});
+        work.setReflex(.sg, Message.S0, .{.action = &workS0});
+        work.setReflex(.sg, Message.S1, .{.action = &workS0});
 
         me.data = me.allocator.create(ListenerData) catch unreachable;
         var pd = util.opaqPtrTo(me.data, *ListenerData);

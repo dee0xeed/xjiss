@@ -56,20 +56,20 @@ pub const Worker = struct {
         var work = &me.stages.items[2];
         var wait = &me.stages.items[3];
 
-        init.setReflex(.sm, Message.M0, Reflex{.transition = conn});
+        init.setReflex(.sm, Message.M0, .{.transition = conn});
 
-        conn.setReflex(.io, Message.D1, Reflex{.action = &connD1});
-        conn.setReflex(.io, Message.D2, Reflex{.action = &connD2});
-        conn.setReflex(.sm, Message.M0, Reflex{.transition = work});
-        conn.setReflex(.sm, Message.M1, Reflex{.transition = wait});
+        conn.setReflex(.io, Message.D1, .{.action = &connD1});
+        conn.setReflex(.io, Message.D2, .{.action = &connD2});
+        conn.setReflex(.sm, Message.M0, .{.transition = work});
+        conn.setReflex(.sm, Message.M1, .{.transition = wait});
 
-        work.setReflex(.sm, Message.M0, Reflex{.action = &workM0});
-        work.setReflex(.io, Message.D1, Reflex{.action = &workD1});
-        work.setReflex(.io, Message.D2, Reflex{.action = &workD2});
-        work.setReflex(.sm, Message.M1, Reflex{.transition = wait});
+        work.setReflex(.sm, Message.M0, .{.action = &workM0});
+        work.setReflex(.io, Message.D1, .{.action = &workD1});
+        work.setReflex(.io, Message.D2, .{.action = &workD2});
+        work.setReflex(.sm, Message.M1, .{.transition = wait});
 
-        wait.setReflex(.tm, Message.T0, Reflex{.transition = conn});
-        wait.setReflex(.sm, Message.M0, Reflex{.action = &waitM0});
+        wait.setReflex(.tm, Message.T0, .{.transition = conn});
+        wait.setReflex(.sm, Message.M0, .{.action = &waitM0});
 
         me.data = me.allocator.create(WorkerData) catch unreachable;
         var wd = util.opaqPtrTo(me.data, *WorkerData);
