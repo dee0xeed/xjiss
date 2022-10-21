@@ -16,8 +16,6 @@ const EventSource = es.EventSource;
 
 const edsm = @import("../engine/edsm.zig");
 const StageMachine = edsm.StageMachine;
-const Stage = StageMachine.Stage;
-const Reflex = Stage.Reflex;
 
 const util = @import("../util.zig");
 const Jis =  @import("../synt.zig").Jis;

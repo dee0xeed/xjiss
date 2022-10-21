@@ -16,8 +16,6 @@ const EventSource = es.EventSource;
 
 const edsm = @import("../engine/edsm.zig");
 const StageMachine = edsm.StageMachine;
-const Stage = StageMachine.Stage;
-const Reflex = Stage.Reflex;
 
 const util = @import("../util.zig");
 const Jis =  @import("../synt.zig").Jis;
@@ -141,12 +139,11 @@ pub const XjisSound = struct {
 
         ret = pcmFd(sd.handle, &pcm_poll, 1);
         if (ret < 0) {
-            print("getPcmFd() failed: {s}\n", .{alsaStrErr(@intCast(c_int, ret))});
+            print("getPcmFd(): {s}\n", .{alsaStrErr(@intCast(c_int, ret))});
             me.msgTo(null, Message.M0, null);
             return;
         }
 
-        //me.initIo(&sd.io);
         sd.io.id = pcm_poll.fd;
         sd.io.enableOut(&me.md.eq) catch unreachable;
     }
@@ -158,11 +155,11 @@ pub const XjisSound = struct {
 
         var ret = pcmWrite(sd.handle, sd.snd_buf.ptr, sd.nframes);
         if (ret < 0) {
-            print("snd_pcm_writei(): {s}\n", .{alsaStrErr(@intCast(c_int, ret))});
+            print("pcmWrite(): {s}\n", .{alsaStrErr(@intCast(c_int, ret))});
             me.msgTo(me, M0_FAIL, null);
             return;
         } else if (ret != sd.nframes) {
-            print("snd_pcm_writei(): partial write, {}/{} frames\n", .{ret, sd.nframes});
+            print("pcmWrite(): partial write, {}/{} frames\n", .{ret, sd.nframes});
             me.msgTo(me, M0_FAIL, null);
             return;
         }
