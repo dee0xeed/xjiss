@@ -416,15 +416,15 @@ pub const XjisGui = struct {
 
     // message from some server machine, turn a tone off
     fn workM0(me: *StageMachine, _: ?*StageMachine, dptr: ?*anyopaque) void {
-        var gd = util.opaqPtrTo(me.data, *GuiData);
-        var tn = util.opaqPtrTo(dptr, *u8);
+        const gd = util.opaqPtrTo(me.data, *GuiData);
+        const tn = util.opaqPtrTo(dptr, *u8);
         toneOff(gd, @intCast(u6, tn.*));
     }
 
     // message from some server machine, turn a tone on
     fn workM1(me: *StageMachine, _: ?*StageMachine, dptr: ?*anyopaque) void {
-        var gd = util.opaqPtrTo(me.data, *GuiData);
-        var tn = util.opaqPtrTo(dptr, *u8);
+        const gd = util.opaqPtrTo(me.data, *GuiData);
+        const tn = util.opaqPtrTo(dptr, *u8);
         toneOn(gd, @intCast(u6, tn.*));
     }
 };
