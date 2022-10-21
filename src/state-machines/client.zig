@@ -46,10 +46,10 @@ pub const Worker = struct {
     ) !*StageMachine {
 
         var me = try StageMachine.onHeap(a, md, "WORKER", 1);
-        try me.addStage(Stage{.name = "INIT", .enter = &initEnter, .leave = null});
-        try me.addStage(Stage{.name = "CONN", .enter = &connEnter, .leave = null});
-        try me.addStage(Stage{.name = "WORK", .enter = null, .leave = null});
-        try me.addStage(Stage{.name = "WAIT", .enter = &waitEnter, .leave = null});
+        try me.addStage(.{.name = "INIT", .enter = &initEnter, .leave = null});
+        try me.addStage(.{.name = "CONN", .enter = &connEnter, .leave = null});
+        try me.addStage(.{.name = "WORK", .enter = null, .leave = null});
+        try me.addStage(.{.name = "WAIT", .enter = &waitEnter, .leave = null});
 
         var init = &me.stages.items[0];
         var conn = &me.stages.items[1];

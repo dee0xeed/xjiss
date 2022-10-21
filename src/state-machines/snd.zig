@@ -60,9 +60,9 @@ pub const XjisSound = struct {
     pub fn onHeap(a: Allocator, md: *MessageDispatcher, jis: *Jis) !*StageMachine {
 
         var me = try StageMachine.onHeap(a, md, "SND", 1);
-        try me.addStage(Stage{.name = "INIT", .enter = &initEnter, .leave = null});
-        try me.addStage(Stage{.name = "WORK", .enter = &workEnter, .leave = null});
-        try me.addStage(Stage{.name = "FAIL", .enter = &failEnter, .leave = null});
+        try me.addStage(.{.name = "INIT", .enter = &initEnter, .leave = null});
+        try me.addStage(.{.name = "WORK", .enter = &workEnter, .leave = null});
+        try me.addStage(.{.name = "FAIL", .enter = &failEnter, .leave = null});
 
         var init = &me.stages.items[0];
         var work = &me.stages.items[1];
