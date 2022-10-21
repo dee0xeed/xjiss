@@ -130,12 +130,17 @@ pub const XjisSound = struct {
         var pcm_poll: alsa.pollfd = undefined;
         var ret: c_int = 0;
 
-//        ret = pcmFdCount(sd.handle);
-//        if (ret < 0) {
-//            print("getPcmFdCount() failed: {s}\n", .{alsaStrErr(@intCast(c_int, ret))});
-//            me.msgTo(null, Message.M0, null);
-//            return;
-//        }
+        ret = pcmFdCount(sd.handle);
+        if (ret < 0) {
+            print("getPcmFdCount(): {s}\n", .{alsaStrErr(@intCast(c_int, ret))});
+            me.msgTo(null, Message.M0, null);
+            return;
+        }
+        if (ret != 1) {
+            print("getPcmFdCount(): we want only 1 fd\n", .{});
+            me.msgTo(null, Message.M0, null);
+            return;
+        }
 
         ret = pcmFd(sd.handle, &pcm_poll, 1);
         if (ret < 0) {
