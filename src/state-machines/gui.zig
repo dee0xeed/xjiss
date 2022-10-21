@@ -306,7 +306,7 @@ pub const XjisGui = struct {
             return handler(gd.jis);
         }
 
-        const tn = gd.jis.key_to_tone_number_map[ks & 0xFF] orelse return false;
+        const tn = gd.jis.keyToToneNumber(@intCast(u8, ks & 0xFF)) orelse return false;
         if (.client == gd.mode) {
             const cmd = @intCast(u8, tn + 1) | 0x80;
             gd.me.msgTo(gd.client, M0_SEND, @intToPtr(*anyopaque, cmd));
@@ -344,7 +344,7 @@ pub const XjisGui = struct {
         if ((ks & 0xFF00) != 0)
             return false;
 
-        const tn = gd.jis.key_to_tone_number_map[ks & 0xFF] orelse return false;
+        const tn = gd.jis.keyToToneNumber(@intCast(u8, ks & 0xFF)) orelse return false;
         if (.client == gd.mode) {
             const cmd = tn + 1;
             gd.me.msgTo(gd.client, M0_SEND, @intToPtr(*anyopaque, cmd));

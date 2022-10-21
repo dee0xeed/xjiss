@@ -142,6 +142,10 @@ pub const Jis = struct {
         return jis;
     }
 
+    pub fn keyToToneNumber(jis: *@This(), key: u8) ?u6 {
+        return jis.key_to_tone_number_map[key];
+    }
+
     pub fn generateWaveForm(jis: *@This(), buf: []i16) void {
 
         var k: u32 = 0;

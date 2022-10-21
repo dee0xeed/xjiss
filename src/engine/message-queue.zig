@@ -100,7 +100,7 @@ pub const MessageDispatcher = struct {
         }
 
         pub fn put(self: *MQ, item: Message) !void {
-            if (self.n_items == self.cap) return error.IsFull;
+            if (self.n_items == self.cap) return Error.IsFull;
             self.w_index += 1;
             self.w_index &= self.index_mask;
             self.storage[self.w_index] = item;

@@ -27,7 +27,7 @@ pub const StageMachine = struct {
     allocator: Allocator,
     data: ?*anyopaque = null,
 
-    const StageMachineError = error {
+    const Error = error {
         IsAlreadyRunning,
         HasNoStates,
         StageHasNoReflexes,
@@ -185,9 +185,9 @@ pub const StageMachine = struct {
     pub fn run(self: *Self) !void {
 
         if (0 == self.stages.items.len)
-            return error.HasNoStates;
+            return Error.HasNoStates;
         if (self.is_running)
-            return error.IsAlreadyRunning;
+            return Error.IsAlreadyRunning;
 
         var k: u32 = 0;
         while (k < self.stages.items.len) : (k += 1) {
@@ -203,7 +203,7 @@ pub const StageMachine = struct {
             }
             if (0 == cnt) {
                 print("stage '{s}' of '{s}' has no reflexes\n", .{stage.name, self.name});
-                return error.StageHasNoReflexes;
+                return Error.StageHasNoReflexes;
             }
         }
 
