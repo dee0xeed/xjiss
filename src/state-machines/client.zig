@@ -90,7 +90,9 @@ pub const Worker = struct {
         wd.io.enableOut(&me.md.eq) catch unreachable;
     }
 
-    fn connD1(me: *StageMachine, _: ?*StageMachine, _: ?*anyopaque) void {
+    fn connD1(me: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
+        _ = src;
+        _ = dptr;
         var wd = util.opaqPtrTo(me.data, *WorkerData);
         print("connected to '{s}:{}'\n", .{wd.host, wd.port});
         me.msgTo(me, M0_WORK, null);
@@ -105,7 +107,8 @@ pub const Worker = struct {
     }
 
     // message from GUI machine
-    fn workM0(me: *StageMachine, _: ?*StageMachine, dptr: ?*anyopaque) void {
+    fn workM0(me: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
+        _ = src;
         var wd = util.opaqPtrTo(me.data, *WorkerData);
         const cmd = @ptrToInt(dptr) - 1;
         wd.buf[wd.cnt] = @intCast(u8, cmd);
@@ -113,7 +116,8 @@ pub const Worker = struct {
         wd.io.enableOut(&me.md.eq) catch unreachable;
     }
 
-    fn workD1(me: *StageMachine, _: ?*StageMachine, dptr: ?*anyopaque) void {
+    fn workD1(me: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
+        _ = src;
         var wd = util.opaqPtrTo(me.data, *WorkerData);
         var io = util.opaqPtrTo(dptr, *EventSource);
 
@@ -128,7 +132,9 @@ pub const Worker = struct {
         }
     }
 
-    fn workD2(me: *StageMachine, _: ?*StageMachine, _: ?*anyopaque) void {
+    fn workD2(me: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
+        _ = src;
+        _ = dptr;
         print("connection lost\n", .{});
         me.msgTo(me, M1_WAIT, null);
     }
@@ -140,7 +146,10 @@ pub const Worker = struct {
     }
 
     // a key pressed but we are not connected
-    fn waitM0(_: *StageMachine, _: ?*StageMachine, _: ?*anyopaque) void {
+    fn waitM0(me: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
+        _ = me;
+        _ = src;
+        _ = dptr;
 //        var wd = util.opaqPtrTo(me.data, *WorkerData);
         print("not connected\n", .{});
     }

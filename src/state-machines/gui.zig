@@ -395,7 +395,8 @@ pub const XjisGui = struct {
         gd.io.enable(&me.md.eq, .{}) catch unreachable;
     }
 
-    fn workD0(me: *StageMachine, _: ?*StageMachine, dptr: ?*anyopaque) void {
+    fn workD0(me: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
+        _ = src;
         var gd = util.opaqPtrTo(me.data, *GuiData);
         var io = util.opaqPtrTo(dptr, *EventSource);
 
@@ -409,20 +410,24 @@ pub const XjisGui = struct {
         io.enable(&me.md.eq, .{}) catch unreachable;
     }
 
-    fn workD2(me: *StageMachine, _: ?*StageMachine, _: ?*anyopaque) void {
+    fn workD2(me: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
+        _ = src;
+        _ = dptr;
         print("connection to X-server lost\n", .{});
         me.msgTo(null, Message.M0, null);
     }
 
     // message from some server machine, turn a tone off
-    fn workM0(me: *StageMachine, _: ?*StageMachine, dptr: ?*anyopaque) void {
+    fn workM0(me: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
+        _ = src;
         const gd = util.opaqPtrTo(me.data, *GuiData);
         const tn = util.opaqPtrTo(dptr, *u8);
         toneOff(gd, @intCast(u6, tn.*));
     }
 
     // message from some server machine, turn a tone on
-    fn workM1(me: *StageMachine, _: ?*StageMachine, dptr: ?*anyopaque) void {
+    fn workM1(me: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
+        _ = src;
         const gd = util.opaqPtrTo(me.data, *GuiData);
         const tn = util.opaqPtrTo(dptr, *u8);
         toneOn(gd, @intCast(u6, tn.*));

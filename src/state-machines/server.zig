@@ -93,7 +93,8 @@ pub const Worker = struct {
         wd.io.enable(&me.md.eq, .{}) catch unreachable;
     }
 
-    fn recvD0(me: *StageMachine, _: ?*StageMachine, dptr: ?*anyopaque) void {
+    fn recvD0(me: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
+        _ = src;
         var wd = util.opaqPtrTo(me.data, *WorkerData);
         var io = util.opaqPtrTo(dptr, *EventSource);
         const ba = io.info.io.bytes_avail;
@@ -119,7 +120,9 @@ pub const Worker = struct {
         io.enable(&me.md.eq, .{}) catch unreachable;
     }
 
-    fn recvD2(me: *StageMachine, _: ?*StageMachine, _: ?*anyopaque) void {
+    fn recvD2(me: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
+        _ = src;
+        _ = dptr;
         var wd = util.opaqPtrTo(me.data, *WorkerData);
         me.msgTo(me, M0_IDLE, null);
         me.msgTo(wd.listener, M0_GONE, wd.client);

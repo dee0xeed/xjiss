@@ -150,8 +150,8 @@ pub const XjisSound = struct {
         sd.io.enableOut(&me.md.eq) catch unreachable;
     }
 
-    fn workD1(me: *StageMachine, _: ?*StageMachine, dptr: ?*anyopaque) void {
-
+    fn workD1(me: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
+        _ = src;
         var sd = util.opaqPtrTo(me.data, *SoundData);
         var io = util.opaqPtrTo(dptr, *EventSource);
 
