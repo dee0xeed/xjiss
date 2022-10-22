@@ -98,7 +98,9 @@ pub const Worker = struct {
         me.msgTo(me, M0_WORK, null);
     }
 
-    fn connD2(me: *StageMachine, _: ?*StageMachine, _: ?*anyopaque) void {
+    fn connD2(me: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
+        _ = src;
+        _ = dptr;
         var wd = util.opaqPtrTo(me.data, *WorkerData);
         os.getsockoptError(wd.io.id) catch |err| {
             print("can not connect to '{s}:{}': {}\n", .{wd.host, wd.port, err});

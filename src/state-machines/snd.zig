@@ -170,7 +170,9 @@ pub const XjisSound = struct {
         io.enableOut(&me.md.eq) catch unreachable;
     }
 
-    fn workD2(me: *StageMachine, _: ?*StageMachine, _: ?*anyopaque) void {
+    fn workD2(me: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
+        _ = src;
+        _ = dptr;
         me.msgTo(me, M0_FAIL, null);
     }
 

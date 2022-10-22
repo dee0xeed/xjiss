@@ -195,7 +195,9 @@ pub const XjisGui = struct {
         return false;
     }
 
-    fn handleClientMessage(_: *x11.XEvent, _: *GuiData) bool {
+    fn handleClientMessage(xe: *x11.XEvent, gd: *GuiData) bool {
+        _ = xe;
+        _ = gd;
         // terminate
         return true;
     }
