@@ -67,3 +67,5 @@ Legend
 * [Introduction to Sound Programming with ALSA](https://www.linuxjournal.com/article/6735)
 * [A Close Look at ALSA](https://www.volkerschatz.com/noise/alsa.html)
 * [Just Tuning](https://www.sfu.ca/sonic-studio-webdav/handbook/Just_Tuning.html)
+* [X Window System Basics](https://magcius.github.io/xplain/article/x-basics.html)
+* [Learning to Use X11](https://www.linuxjournal.com/article/4879)
