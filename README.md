@@ -1,5 +1,7 @@
 # Just Intonation Synthesizer
 
+![xjiss-picture](https://repository-images.githubusercontent.com/553664893/79559718-09db-4c89-b7c6-e80121ddf164)
+
 `xjiss` is a software synthesizer written for Linux in Zig programming language.
 It was written as
 
@@ -64,6 +66,7 @@ Legend
 
 
 ## Links
+
 * [Introduction to Sound Programming with ALSA](https://www.linuxjournal.com/article/6735)
 * [A Close Look at ALSA](https://www.volkerschatz.com/noise/alsa.html)
 * [Just Tuning](https://www.sfu.ca/sonic-studio-webdav/handbook/Just_Tuning.html)
