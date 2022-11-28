@@ -41,9 +41,9 @@ pub const Worker = struct {
 
         number += 1;
         var me = try StageMachine.onHeap(a, md, "SERVER", number, 3);
-        me.stages[0] = .{.name = "INIT", .enter = &initEnter, .leave = null};
-        me.stages[1] = .{.name = "IDLE", .enter = &idleEnter, .leave = null};
-        me.stages[2] = .{.name = "RECV", .enter = &recvEnter, .leave = null};
+        me.stages[0] = .{.name = "INIT", .enter = &initEnter};
+        me.stages[1] = .{.name = "IDLE", .enter = &idleEnter};
+        me.stages[2] = .{.name = "RECV", .enter = &recvEnter};
 
         var init = &me.stages[0];
         var idle = &me.stages[1];

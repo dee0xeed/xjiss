@@ -41,7 +41,7 @@ pub const Listener = struct {
     ) !*StageMachine {
 
         var me = try StageMachine.onHeap(a, md, "LISTENER", 1, 2);
-        me.stages[0] = .{.name = "INIT", .enter = &initEnter, .leave = null};
+        me.stages[0] = .{.name = "INIT", .enter = &initEnter};
         me.stages[1] = .{.name = "WORK", .enter = &workEnter, .leave = &workLeave};
 
         var init = &me.stages[0];
