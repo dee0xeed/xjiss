@@ -26,9 +26,9 @@ pub const Listener = struct {
     const M0_GONE = Message.M0;
 
     const ListenerData = struct {
-        sg0: Signal, //EventSource,
-        sg1: Signal, //EventSource,
-        lsk: ServerSocket, // EventSource, // listening socket
+        sg0: Signal,
+        sg1: Signal,
+        lsk: ServerSocket,
         port: u16,
         wpool: *MachinePool,
     };
