@@ -89,7 +89,7 @@ pub const XjisSound = struct {
         );
         if (ret < 0) {
             print("pcmOpen(): {s}\n", .{alsaStrErr(@intCast(c_int, ret))});
-            unreachable;
+            os.raise(os.SIG.TERM) catch unreachable;
         }
 
         ret = alsa.snd_output_stdio_attach(
@@ -98,7 +98,7 @@ pub const XjisSound = struct {
         );
         if (ret < 0) {
             print("{s}\n", .{alsaStrErr(@intCast(c_int, ret))});
-            unreachable;
+            os.raise(os.SIG.TERM) catch unreachable;
         }
 
         ret = pcmSetParams(
@@ -108,7 +108,7 @@ pub const XjisSound = struct {
         );
         if (ret < 0) {
             print("pcmSetParams(): {s}\n", .{alsaStrErr(@intCast(c_int, ret))});
-            unreachable;
+            os.raise(os.SIG.TERM) catch unreachable;
         }
 
         _ = pcmDump(sd.handle, sd.output);
@@ -133,18 +133,18 @@ pub const XjisSound = struct {
         ret = pcmFdCount(me.sd.handle);
         if (ret < 0) {
             print("getPcmFdCount(): {s}\n", .{alsaStrErr(@intCast(c_int, ret))});
-            sm.msgTo(null, Message.M0, null);
+            os.raise(os.SIG.TERM) catch unreachable;
             return;
         }
         if (ret != 1) {
             print("getPcmFdCount(): we want only 1 fd\n", .{});
-            sm.msgTo(null, Message.M0, null);
+            os.raise(os.SIG.TERM) catch unreachable;
             return;
         }
         ret = pcmFd(me.sd.handle, &pcm_poll, 1);
         if (ret < 0) {
             print("getPcmFd(): {s}\n", .{alsaStrErr(@intCast(c_int, ret))});
-            sm.msgTo(null, Message.M0, null);
+            os.raise(os.SIG.TERM) catch unreachable;
             return;
         }
         me.sd.io.es.id = pcm_poll.fd;
