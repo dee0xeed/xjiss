@@ -76,8 +76,6 @@ pub const XjisGui = struct {
         work.setReflex(Message.M0, .{.do_this = &workM0});
         work.setReflex(Message.M1, .{.do_this = &workM1});
 
-//        me.data = me.allocator.create(GuiData) catch unreachable;
-//        var gd = util.opaqPtrTo(me.data, *GuiData);
         me.gd.jis = jis;
         me.gd.mode = .server;
         me.gd.client = null;
@@ -102,12 +100,10 @@ pub const XjisGui = struct {
     }
 
     pub fn setMode(me: *XjisGui, mode: Mode) void {
-        // var gd = util.opaqPtrTo(self.data, *GuiData);
         me.gd.mode = mode;
     }
 
     pub fn setBuddy(me: *XjisGui, other: *StageMachine) void {
-        // var gd = util.opaqPtrTo(self.data, *GuiData);
         me.gd.client = other;
     }
 
