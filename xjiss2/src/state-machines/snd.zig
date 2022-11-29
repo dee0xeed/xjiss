@@ -60,9 +60,9 @@ pub const XjisSound = struct {
 
         var me = try a.create(XjisSound);
         me.sm = try StageMachine.init(a, md, "SND", 1, 3);
-        me.sm.stages[0] = .{.name = "INIT", .enter = &initEnter};
-        me.sm.stages[1] = .{.name = "WORK", .enter = &workEnter};
-        me.sm.stages[2] = .{.name = "FAIL", .enter = &failEnter};
+        me.sm.stages[0] = .{.sm = &me.sm, .name = "INIT", .enter = &initEnter};
+        me.sm.stages[1] = .{.sm = &me.sm, .name = "WORK", .enter = &workEnter};
+        me.sm.stages[2] = .{.sm = &me.sm, .name = "FAIL", .enter = &failEnter};
 
         var init = &me.sm.stages[0];
         var work = &me.sm.stages[1];

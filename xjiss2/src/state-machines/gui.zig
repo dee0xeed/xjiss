@@ -65,8 +65,8 @@ pub const XjisGui = struct {
 
         var me = try a.create(XjisGui);
         me.sm = try StageMachine.init(a, md, "GUI", 1, 2);
-        me.sm.stages[0] = .{.name = "INIT", .enter = &initEnter};
-        me.sm.stages[1] = .{.name = "WORK", .enter = &workEnter};
+        me.sm.stages[0] = .{.sm = &me.sm, .name = "INIT", .enter = &initEnter};
+        me.sm.stages[1] = .{.sm = &me.sm, .name = "WORK", .enter = &workEnter};
         var init = &me.sm.stages[0];
         var work = &me.sm.stages[1];
 

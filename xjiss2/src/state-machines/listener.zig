@@ -45,8 +45,8 @@ pub const Listener = struct {
 
         var me = try a.create(Listener);
         me.sm = try StageMachine.init(a, md, "LISTENER", 1, 2);
-        me.sm.stages[0] = .{.name = "INIT", .enter = &initEnter};
-        me.sm.stages[1] = .{.name = "WORK", .enter = &workEnter, .leave = &workLeave};
+        me.sm.stages[0] = .{.sm = &me.sm, .name = "INIT", .enter = &initEnter};
+        me.sm.stages[1] = .{.sm = &me.sm, .name = "WORK", .enter = &workEnter, .leave = &workLeave};
 
         var init = &me.sm.stages[0];
         var work = &me.sm.stages[1];

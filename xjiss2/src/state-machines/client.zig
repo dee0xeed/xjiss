@@ -41,10 +41,10 @@ pub const Worker = struct {
 
         var me = try a.create(Worker);
         me.sm = try StageMachine.init(a, md, "WORKER", 1, 4);
-        me.sm.stages[0] = .{.name = "INIT", .enter = &initEnter};
-        me.sm.stages[1] = .{.name = "CONN", .enter = &connEnter};
-        me.sm.stages[2] = .{.name = "WORK"};
-        me.sm.stages[3] = .{.name = "WAIT", .enter = &waitEnter, .leave = &waitLeave};
+        me.sm.stages[0] = .{.sm = &me.sm, .name = "INIT", .enter = &initEnter};
+        me.sm.stages[1] = .{.sm = &me.sm, .name = "CONN", .enter = &connEnter};
+        me.sm.stages[2] = .{.sm = &me.sm, .name = "WORK"};
+        me.sm.stages[3] = .{.sm = &me.sm, .name = "WAIT", .enter = &waitEnter, .leave = &waitLeave};
 
         var init = &me.sm.stages[0];
         var conn = &me.sm.stages[1];
