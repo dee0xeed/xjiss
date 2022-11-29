@@ -88,9 +88,7 @@ pub const Listener = struct {
             sm.allocator.destroy(peer);
             return;
         };
-
         print("client from {}\n", .{peer.addr});
-
         var wsm = me.pd.wpool.get();
         if (wsm) |worker| {
             sm.msgTo(worker, M1_MEET, peer);
@@ -105,6 +103,7 @@ pub const Listener = struct {
         _ = src;
         var peer = util.opaqPtrTo(dptr, *ServerSocket.Client);
         os.close(peer.fd);
+        print("client from {} gone\n", .{peer.addr});
         sm.allocator.destroy(peer);
     }
 
