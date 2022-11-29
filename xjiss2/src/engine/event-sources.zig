@@ -246,7 +246,9 @@ pub const ClientSocket = struct {
     }
 
     pub fn startConnect(self: *ClientSocket) !void {
+
         const InProgress = os.ConnectError.WouldBlock;
+
         var flags = os.fcntl(self.io.es.id, os.F.GETFL, 0) catch unreachable;
         flags |= os.O.NONBLOCK;
         _ = os.fcntl(self.io.es.id, os.F.SETFL, flags) catch unreachable;
