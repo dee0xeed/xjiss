@@ -53,12 +53,12 @@ pub const Worker = struct {
         var idle = &me.sm.stages[1];
         var recv = &me.sm.stages[2];
 
-        init.setReflex(Message.M0, .{.jumpto = idle});
-        idle.setReflex(Message.M1, .{.action = &idleM1});
-        idle.setReflex(Message.M0, .{.jumpto = recv});
-        recv.setReflex(Message.D0, .{.action = &recvD0});
-        recv.setReflex(Message.D2, .{.action = &recvD2});
-        recv.setReflex(Message.M0, .{.jumpto = idle});
+        init.setReflex(Message.M0, .{.jump_to = idle});
+        idle.setReflex(Message.M1, .{.do_this = &idleM1});
+        idle.setReflex(Message.M0, .{.jump_to = recv});
+        recv.setReflex(Message.D0, .{.do_this = &recvD0});
+        recv.setReflex(Message.D2, .{.do_this = &recvD2});
+        recv.setReflex(Message.M0, .{.jump_to = idle});
 
         me.wd.pool = pool;
         return me;

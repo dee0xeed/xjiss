@@ -70,11 +70,11 @@ pub const XjisGui = struct {
         var init = &me.sm.stages[0];
         var work = &me.sm.stages[1];
 
-        init.setReflex(Message.M0, .{.jumpto = work});
-        work.setReflex(Message.D0, .{.action = &workD0});
-        work.setReflex(Message.D2, .{.action = &workD2});
-        work.setReflex(Message.M0, .{.action = &workM0});
-        work.setReflex(Message.M1, .{.action = &workM1});
+        init.setReflex(Message.M0, .{.jump_to = work});
+        work.setReflex(Message.D0, .{.do_this = &workD0});
+        work.setReflex(Message.D2, .{.do_this = &workD2});
+        work.setReflex(Message.M0, .{.do_this = &workM0});
+        work.setReflex(Message.M1, .{.do_this = &workM1});
 
 //        me.data = me.allocator.create(GuiData) catch unreachable;
 //        var gd = util.opaqPtrTo(me.data, *GuiData);

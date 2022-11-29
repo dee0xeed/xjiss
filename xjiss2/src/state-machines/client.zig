@@ -51,20 +51,20 @@ pub const Worker = struct {
         var work = &me.sm.stages[2];
         var wait = &me.sm.stages[3];
 
-        init.setReflex(Message.M0, .{.jumpto = conn});
+        init.setReflex(Message.M0, .{.jump_to = conn});
 
-        conn.setReflex(Message.D1, .{.action = &connD1});
-        conn.setReflex(Message.D2, .{.action = &connD2});
-        conn.setReflex(Message.M0, .{.jumpto = work});
-        conn.setReflex(Message.M1, .{.jumpto = wait});
+        conn.setReflex(Message.D1, .{.do_this = &connD1});
+        conn.setReflex(Message.D2, .{.do_this = &connD2});
+        conn.setReflex(Message.M0, .{.jump_to = work});
+        conn.setReflex(Message.M1, .{.jump_to = wait});
 
-        work.setReflex(Message.M0, .{.action = &workM0});
-        work.setReflex(Message.D1, .{.action = &workD1});
-        work.setReflex(Message.D2, .{.action = &workD2});
-        work.setReflex(Message.M1, .{.jumpto = wait});
+        work.setReflex(Message.M0, .{.do_this = &workM0});
+        work.setReflex(Message.D1, .{.do_this = &workD1});
+        work.setReflex(Message.D2, .{.do_this = &workD2});
+        work.setReflex(Message.M1, .{.jump_to = wait});
 
-        wait.setReflex(Message.T0, .{.jumpto = conn});
-        wait.setReflex(Message.M0, .{.action = &waitM0});
+        wait.setReflex(Message.T0, .{.jump_to = conn});
+        wait.setReflex(Message.M0, .{.do_this = &waitM0});
 
         me.wd.host = host;
         me.wd.port = port;

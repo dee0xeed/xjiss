@@ -51,11 +51,11 @@ pub const Listener = struct {
         var init = &me.sm.stages[0];
         var work = &me.sm.stages[1];
 
-        init.setReflex(Message.M0, .{.jumpto = work});
-        work.setReflex(Message.D0, .{.action = &workD0});
-        work.setReflex(Message.M0, .{.action = &workM0});
-        work.setReflex(Message.S0, .{.action = &workS0});
-        work.setReflex(Message.S1, .{.action = &workS0});
+        init.setReflex(Message.M0, .{.jump_to = work});
+        work.setReflex(Message.D0, .{.do_this = &workD0});
+        work.setReflex(Message.M0, .{.do_this = &workM0});
+        work.setReflex(Message.S0, .{.do_this = &workS0});
+        work.setReflex(Message.S1, .{.do_this = &workS0});
 
         me.pd.port = port;
         me.pd.wpool = wpool;
