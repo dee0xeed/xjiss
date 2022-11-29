@@ -48,17 +48,17 @@ pub fn main() !void {
         const arg2 = std.mem.sliceTo(std.os.argv[2], 0);
         const port = std.fmt.parseInt(u16, arg2, 10) catch 3333;
         var snd = try Snd.onHeap(allocator, &md, &jis);
-        try snd.run();
+        try snd.sm.run();
         var i: u8 = 0;
         var pool = try MachinePool.init(allocator, max_clients);
         Gui.setMode(gui, .server);
         while (i < max_clients) : (i += 1) {
             var server = try Server.onHeap(allocator, &md, &pool);
-            Server.setBuddy(server, gui);
-            try server.run();
+            Server.setBuddy(server, &gui.sm);
+            try server.sm.run();
         }
         var reception = try Listener.onHeap(allocator, &md, port, &pool);
-        try reception.run();
+        try reception.sm.run();
     } else if (4 == std.os.argv.len) {
         // client mode
         if ('c' != std.os.argv[1][0]) {
@@ -69,15 +69,15 @@ pub fn main() !void {
         const arg3 = std.mem.sliceTo(std.os.argv[3], 0);
         const port = std.fmt.parseInt(u16, arg3, 10) catch 3333;
         var client = try Client.onHeap(allocator, &md, host, port);
-        try client.run();
+        try client.sm.run();
         Gui.setMode(gui, .client);
-        Gui.setBuddy(gui, client);
+        Gui.setBuddy(gui, &client.sm);
     } else {
         help();
         return;
     }
 
-    try gui.run();
+    try gui.sm.run();
     try md.loop();
     md.eq.fini();
 }

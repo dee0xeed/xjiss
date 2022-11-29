@@ -43,7 +43,7 @@ pub const XjisSound = struct {
     // const device = "hw:0,0";
     const device = "plughw:0,0";
 
-    const SoundData = struct {
+    const Data = struct {
         io: InOut,
         jis: *Jis,
         handle: *alsa.snd_pcm_t,
@@ -53,16 +53,20 @@ pub const XjisSound = struct {
         nframes: c_ulong,
     };
 
-    pub fn onHeap(a: Allocator, md: *MessageDispatcher, jis: *Jis) !*StageMachine {
+    sm: StageMachine,
+    sd: Data,
 
-        var me = try StageMachine.onHeap(a, md, "SND", 1, 3);
-        me.stages[0] = .{.name = "INIT", .enter = &initEnter};
-        me.stages[1] = .{.name = "WORK", .enter = &workEnter};
-        me.stages[2] = .{.name = "FAIL", .enter = &failEnter};
+    pub fn onHeap(a: Allocator, md: *MessageDispatcher, jis: *Jis) !*XjisSound {
 
-        var init = &me.stages[0];
-        var work = &me.stages[1];
-        var fail = &me.stages[2];
+        var me = try a.create(XjisSound);
+        me.sm = try StageMachine.init(a, md, "SND", 1, 3);
+        me.sm.stages[0] = .{.name = "INIT", .enter = &initEnter};
+        me.sm.stages[1] = .{.name = "WORK", .enter = &workEnter};
+        me.sm.stages[2] = .{.name = "FAIL", .enter = &failEnter};
+
+        var init = &me.sm.stages[0];
+        var work = &me.sm.stages[1];
+        var fail = &me.sm.stages[2];
 
         init.setReflex(Message.M0, .{.transition = work});
         work.setReflex(Message.D1, .{.action = &workD1});
@@ -70,13 +74,11 @@ pub const XjisSound = struct {
         work.setReflex(Message.M0, .{.transition = fail});
         fail.setReflex(Message.M0, .{.transition = work});
 
-        me.data = me.allocator.create(SoundData) catch unreachable;
-        var sd = util.opaqPtrTo(me.data, *SoundData);
-        sd.jis = jis;
+        me.sd.jis = jis;
         return me;
     }
 
-    fn initAlsa(sd: *SoundData) void {
+    fn initAlsa(sd: *Data) void {
         var buf: alsa.snd_pcm_uframes_t = undefined;
         var per: alsa.snd_pcm_uframes_t = undefined;
         var ret: c_int = 0;
@@ -114,72 +116,72 @@ pub const XjisSound = struct {
         sd.nframes = per;
     }
 
-    fn initEnter(me: *StageMachine) void {
-        var sd = util.opaqPtrTo(me.data, *SoundData);
-        initAlsa(sd);
-        sd.snd_buf = me.allocator.alloc(i16, 2 * sd.nframes) catch unreachable;
-        mem.set(i16, sd.snd_buf, 0);
-        sd.io = InOut.init(me, -1);
-        me.msgTo(me, M0_WORK, null);
+    fn initEnter(sm: *StageMachine) void {
+        var me = @fieldParentPtr(XjisSound, "sm", sm);
+        initAlsa(&me.sd);
+        me.sd.snd_buf = sm.allocator.alloc(i16, 2 * me.sd.nframes) catch unreachable;
+        mem.set(i16, me.sd.snd_buf, 0);
+        me.sd.io = InOut.init(&me.sm, -1);
+        sm.msgTo(sm, M0_WORK, null);
     }
 
-    fn workEnter(me: *StageMachine) void {
-        var sd = util.opaqPtrTo(me.data, *SoundData);
+    fn workEnter(sm: *StageMachine) void {
+        var me = @fieldParentPtr(XjisSound, "sm", sm);
         var pcm_poll: alsa.pollfd = undefined;
         var ret: c_int = 0;
 
-        ret = pcmFdCount(sd.handle);
+        ret = pcmFdCount(me.sd.handle);
         if (ret < 0) {
             print("getPcmFdCount(): {s}\n", .{alsaStrErr(@intCast(c_int, ret))});
-            me.msgTo(null, Message.M0, null);
+            sm.msgTo(null, Message.M0, null);
             return;
         }
         if (ret != 1) {
             print("getPcmFdCount(): we want only 1 fd\n", .{});
-            me.msgTo(null, Message.M0, null);
+            sm.msgTo(null, Message.M0, null);
             return;
         }
-        ret = pcmFd(sd.handle, &pcm_poll, 1);
+        ret = pcmFd(me.sd.handle, &pcm_poll, 1);
         if (ret < 0) {
             print("getPcmFd(): {s}\n", .{alsaStrErr(@intCast(c_int, ret))});
-            me.msgTo(null, Message.M0, null);
+            sm.msgTo(null, Message.M0, null);
             return;
         }
-        sd.io.es.id = pcm_poll.fd;
-        sd.io.enableOut() catch unreachable;
+        me.sd.io.es.id = pcm_poll.fd;
+        me.sd.io.enableOut() catch unreachable;
     }
 
-    fn workD1(me: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
+    fn workD1(sm: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
         _ = src;
         _ = dptr;
-        var sd = util.opaqPtrTo(me.data, *SoundData);
+        var me = @fieldParentPtr(XjisSound, "sm", sm);
 
-        var ret = pcmWrite(sd.handle, sd.snd_buf.ptr, sd.nframes);
+        var ret = pcmWrite(me.sd.handle, me.sd.snd_buf.ptr, me.sd.nframes);
         if (ret < 0) {
             print("pcmWrite(): {s}\n", .{alsaStrErr(@intCast(c_int, ret))});
-            me.msgTo(me, M0_FAIL, null);
+            sm.msgTo(sm, M0_FAIL, null);
             return;
-        } else if (ret != sd.nframes) {
-            print("pcmWrite(): partial write, {}/{} frames\n", .{ret, sd.nframes});
-            me.msgTo(me, M0_FAIL, null);
+        } else if (ret != me.sd.nframes) {
+            print("pcmWrite(): partial write, {}/{} frames\n", .{ret, me.sd.nframes});
+            sm.msgTo(sm, M0_FAIL, null);
             return;
         }
 
-        sd.jis.generateWaveForm(sd.snd_buf);
-        sd.io.enableOut() catch unreachable;
+        me.sd.jis.generateWaveForm(me.sd.snd_buf);
+        me.sd.io.enableOut() catch unreachable;
     }
 
-    fn workD2(me: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
+    fn workD2(sm: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
         _ = src;
         _ = dptr;
-        me.msgTo(me, M0_FAIL, null);
+        sm.msgTo(sm, M0_FAIL, null);
     }
 
-    fn failEnter(me: *StageMachine) void {
+    fn failEnter(sm: *StageMachine) void {
         print("An error occured, recovering...\n", .{});
-        var sd = util.opaqPtrTo(me.data, *SoundData);
-        _ = pcmClose(sd.handle);
-        initAlsa(sd);
-        me.msgTo(me, M0_WORK, null);
+        var me = @fieldParentPtr(XjisSound, "sm", sm);
+        _ = pcmClose(me.sd.handle);
+        initAlsa(&me.sd);
+        sm.msgTo(sm, M0_WORK, null);
     }
 };

@@ -37,9 +37,9 @@ pub const XjisGui = struct {
         client,
     };
 
-    const eventHandlerFnPtr = *const fn(xe: *x11.XEvent, gd: *GuiData) bool;
+    const eventHandlerFnPtr = *const fn(xe: *x11.XEvent, gd: *Data) bool;
     const funcKeyHandlerFnPtr = *const fn(jis: *Jis) bool;
-    const GuiData = struct {
+    const Data = struct {
         io: InOut, // socket to X Server
         display: *x11.Display,
         window: x11.Window,
@@ -54,18 +54,21 @@ pub const XjisGui = struct {
         eventHandlers: [x11.LASTEvent]?eventHandlerFnPtr,
         funcKeysHandlers: [256]?funcKeyHandlerFnPtr,
         mode: Mode,
-        me: *StageMachine,
+        sm: *StageMachine,
         client: ?*StageMachine,
     };
 
-    pub fn onHeap(a: Allocator, md: *MessageDispatcher, jis: *Jis) !*StageMachine {
+    sm: StageMachine,
+    gd: Data,
 
-        var me = try StageMachine.onHeap(a, md, "GUI", 1, 2);
-        me.stages[0] = .{.name = "INIT", .enter = &initEnter};
-        me.stages[1] = .{.name = "WORK", .enter = &workEnter};
+    pub fn onHeap(a: Allocator, md: *MessageDispatcher, jis: *Jis) !*XjisGui {
 
-        var init = &me.stages[0];
-        var work = &me.stages[1];
+        var me = try a.create(XjisGui);
+        me.sm = try StageMachine.init(a, md, "GUI", 1, 2);
+        me.sm.stages[0] = .{.name = "INIT", .enter = &initEnter};
+        me.sm.stages[1] = .{.name = "WORK", .enter = &workEnter};
+        var init = &me.sm.stages[0];
+        var work = &me.sm.stages[1];
 
         init.setReflex(Message.M0, .{.transition = work});
         work.setReflex(Message.D0, .{.action = &workD0});
@@ -73,42 +76,42 @@ pub const XjisGui = struct {
         work.setReflex(Message.M0, .{.action = &workM0});
         work.setReflex(Message.M1, .{.action = &workM1});
 
-        me.data = me.allocator.create(GuiData) catch unreachable;
-        var gd = util.opaqPtrTo(me.data, *GuiData);
-        gd.jis = jis;
-        gd.mode = .server;
-        gd.client = null;
-        gd.me = me;
+//        me.data = me.allocator.create(GuiData) catch unreachable;
+//        var gd = util.opaqPtrTo(me.data, *GuiData);
+        me.gd.jis = jis;
+        me.gd.mode = .server;
+        me.gd.client = null;
+        me.gd.sm = &me.sm;
 
-        for (gd.eventHandlers) |*h| { h.* = null;}
-        gd.eventHandlers[x11.Expose] = &handleExpose;
-        gd.eventHandlers[x11.ClientMessage] = &handleClientMessage;
-        gd.eventHandlers[x11.KeyPress] = &handleKeyPress;
-        gd.eventHandlers[x11.KeyRelease] = &handleKeyRelease;
+        for (me.gd.eventHandlers) |*h| { h.* = null;}
+        me.gd.eventHandlers[x11.Expose] = &handleExpose;
+        me.gd.eventHandlers[x11.ClientMessage] = &handleClientMessage;
+        me.gd.eventHandlers[x11.KeyPress] = &handleKeyPress;
+        me.gd.eventHandlers[x11.KeyRelease] = &handleKeyRelease;
 
-        for (gd.funcKeysHandlers) |*h| { h.* = null;}
-        gd.funcKeysHandlers[x11.XK_F1 & 0xFF] = &decreaseVolume;
-        gd.funcKeysHandlers[x11.XK_F2 & 0xFF] = &increaseVolume;
-        gd.funcKeysHandlers[x11.XK_F3 & 0xFF] = &onF3;
-        gd.funcKeysHandlers[x11.XK_F4 & 0xFF] = &onF4;
-        gd.funcKeysHandlers[x11.XK_F5 & 0xFF] = &onF5;
-        gd.funcKeysHandlers[x11.XK_F6 & 0xFF] = &onF6;
-        gd.funcKeysHandlers[x11.XK_F7 & 0xFF] = &onF7;
-        gd.funcKeysHandlers[x11.XK_F8 & 0xFF] = &onF8;
+        for (me.gd.funcKeysHandlers) |*h| { h.* = null;}
+        me.gd.funcKeysHandlers[x11.XK_F1 & 0xFF] = &decreaseVolume;
+        me.gd.funcKeysHandlers[x11.XK_F2 & 0xFF] = &increaseVolume;
+        me.gd.funcKeysHandlers[x11.XK_F3 & 0xFF] = &onF3;
+        me.gd.funcKeysHandlers[x11.XK_F4 & 0xFF] = &onF4;
+        me.gd.funcKeysHandlers[x11.XK_F5 & 0xFF] = &onF5;
+        me.gd.funcKeysHandlers[x11.XK_F6 & 0xFF] = &onF6;
+        me.gd.funcKeysHandlers[x11.XK_F7 & 0xFF] = &onF7;
+        me.gd.funcKeysHandlers[x11.XK_F8 & 0xFF] = &onF8;
         return me;
     }
 
-    pub fn setMode(self: *StageMachine, mode: Mode) void {
-        var gd = util.opaqPtrTo(self.data, *GuiData);
-        gd.mode = mode;
+    pub fn setMode(me: *XjisGui, mode: Mode) void {
+        // var gd = util.opaqPtrTo(self.data, *GuiData);
+        me.gd.mode = mode;
     }
 
-    pub fn setBuddy(self: *StageMachine, other: *StageMachine) void {
-        var gd = util.opaqPtrTo(self.data, *GuiData);
-        gd.client = other;
+    pub fn setBuddy(me: *XjisGui, other: *StageMachine) void {
+        // var gd = util.opaqPtrTo(self.data, *GuiData);
+        me.gd.client = other;
     }
 
-    fn initX11(gd: *GuiData) !void {
+    fn initX11(gd: *Data) !void {
 
         var win_name: x11.XTextProperty = undefined;
         var app_name = "Just Intonation Synthesizer";
@@ -190,13 +193,13 @@ pub const XjisGui = struct {
         _ = x11.XAllocNamedColor(gd.display, dcm, "gray", &gd.unpressed_key_color, &color);
     }
 
-    fn handleExpose(e: *x11.XEvent, gd: *GuiData) bool {
+    fn handleExpose(e: *x11.XEvent, gd: *Data) bool {
         if (0 == e.xexpose.count)
             updateScreen(gd);
         return false;
     }
 
-    fn handleClientMessage(xe: *x11.XEvent, gd: *GuiData) bool {
+    fn handleClientMessage(xe: *x11.XEvent, gd: *Data) bool {
         _ = xe;
         _ = gd;
         // terminate
@@ -277,7 +280,7 @@ pub const XjisGui = struct {
         return false;
     }
 
-    fn toneOn(gd: *GuiData, tone_number: u6) void {
+    fn toneOn(gd: *Data, tone_number: u6) void {
         const tn = &gd.jis.tones[tone_number];
 
         if (tn.is_active)
@@ -296,7 +299,7 @@ pub const XjisGui = struct {
         _ = x11.XFlush(gd.display);
     }
 
-    fn handleKeyPress(e: *x11.XEvent, gd: *GuiData) bool {
+    fn handleKeyPress(e: *x11.XEvent, gd: *Data) bool {
 
         const ks = x11.XLookupKeysym(&e.xkey, 0);
         if ((ks & 0xFF00) != 0) {
@@ -307,13 +310,13 @@ pub const XjisGui = struct {
         const tn = gd.jis.keyToToneNumber(@intCast(u8, ks & 0xFF)) orelse return false;
         if (.client == gd.mode) {
             const cmd = @intCast(u8, tn + 1) | 0x80;
-            gd.me.msgTo(gd.client, M0_SEND, @intToPtr(*anyopaque, cmd));
+            gd.sm.msgTo(gd.client, M0_SEND, @intToPtr(*anyopaque, cmd));
         }
         toneOn(gd, tn);
         return false;
     }
 
-    fn toneOff(gd: *GuiData, tone_number: u6) void {
+    fn toneOff(gd: *Data, tone_number: u6) void {
         const tone = &gd.jis.tones[tone_number];
 
         if (.attack == tone.stage)
@@ -328,7 +331,7 @@ pub const XjisGui = struct {
         _ = x11.XFlush(gd.display);
     }
 
-    fn handleKeyRelease(xe: *x11.XEvent, gd: *GuiData) bool {
+    fn handleKeyRelease(xe: *x11.XEvent, gd: *Data) bool {
 
         const ks = x11.XLookupKeysym(&xe.xkey, 0);
         if (x11.XK_Escape == ks)
@@ -345,13 +348,13 @@ pub const XjisGui = struct {
         const tn = gd.jis.keyToToneNumber(@intCast(u8, ks & 0xFF)) orelse return false;
         if (.client == gd.mode) {
             const cmd = tn + 1;
-            gd.me.msgTo(gd.client, M0_SEND, @intToPtr(*anyopaque, cmd));
+            gd.sm.msgTo(gd.client, M0_SEND, @intToPtr(*anyopaque, cmd));
         }
         toneOff(gd, tn);
         return false;
     }
 
-    fn updateKey(gd: *GuiData, tone_number: u6) void {
+    fn updateKey(gd: *Data, tone_number: u6) void {
         const tn = gd.jis.tones[tone_number];
         const ti = Jis.scale[tone_number];
         var x: c_int = 0;
@@ -377,62 +380,62 @@ pub const XjisGui = struct {
         );
     }
 
-    fn updateScreen(gd: *GuiData) void {
+    fn updateScreen(gd: *Data) void {
         for (gd.jis.tones) |_, k| {
             updateKey(gd, @intCast(u6, k));
         }
     }
 
-    fn initEnter(me: *StageMachine) void {
-        var gd = util.opaqPtrTo(me.data, *GuiData);
-        initX11(gd) catch unreachable;
-        updateScreen(gd);
-        _ = x11.XFlush(gd.display);
-        var id = x11.ConnectionNumber(gd.display);
-        gd.io = InOut.init(me, id);
-        me.msgTo(me, M0_WORK, null);
+    fn initEnter(sm: *StageMachine) void {
+        var me = @fieldParentPtr(XjisGui, "sm", sm);
+        initX11(&me.gd) catch unreachable;
+        updateScreen(&me.gd);
+        _ = x11.XFlush(me.gd.display);
+        var id = x11.ConnectionNumber(me.gd.display);
+        me.gd.io = InOut.init(&me.sm, id);
+        sm.msgTo(sm, M0_WORK, null);
     }
 
-    fn workEnter(me: *StageMachine) void {
-        var gd = util.opaqPtrTo(me.data, *GuiData);
-        gd.io.es.enable() catch unreachable;
+    fn workEnter(sm: *StageMachine) void {
+        var me = @fieldParentPtr(XjisGui, "sm", sm);
+        me.gd.io.es.enable() catch unreachable;
     }
 
-    fn workD0(me: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
+    fn workD0(sm: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
         _ = src;
-        var gd = util.opaqPtrTo(me.data, *GuiData);
+        var me = @fieldParentPtr(XjisGui, "sm", sm);
         var io = util.opaqPtrTo(dptr, *EventSource);
 
-        while (x11.XPending(gd.display) != 0) {
+        while (x11.XPending(me.gd.display) != 0) {
             var xe: x11.XEvent = undefined;
-            _ = x11.XNextEvent(gd.display, &xe);
-            const handler = gd.eventHandlers[@intCast(usize, xe.type)] orelse continue;
-            if (handler(&xe, gd))
-                me.msgTo(null,  Message.M0, null);
+            _ = x11.XNextEvent(me.gd.display, &xe);
+            const handler = me.gd.eventHandlers[@intCast(usize, xe.type)] orelse continue;
+            if (handler(&xe, &me.gd))
+                sm.msgTo(null,  Message.M0, null);
         }
         io.enable() catch unreachable;
     }
 
-    fn workD2(me: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
+    fn workD2(sm: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
         _ = src;
         _ = dptr;
         print("connection to X-server lost\n", .{});
-        me.msgTo(null, Message.M0, null);
+        sm.msgTo(null, Message.M0, null);
     }
 
     // message from some server machine, turn a tone off
-    fn workM0(me: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
+    fn workM0(sm: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
         _ = src;
-        const gd = util.opaqPtrTo(me.data, *GuiData);
+        var me = @fieldParentPtr(XjisGui, "sm", sm);
         const tn = util.opaqPtrTo(dptr, *u8);
-        toneOff(gd, @intCast(u6, tn.*));
+        toneOff(&me.gd, @intCast(u6, tn.*));
     }
 
     // message from some server machine, turn a tone on
-    fn workM1(me: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
+    fn workM1(sm: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
         _ = src;
-        const gd = util.opaqPtrTo(me.data, *GuiData);
+        var me = @fieldParentPtr(XjisGui, "sm", sm);
         const tn = util.opaqPtrTo(dptr, *u8);
-        toneOn(gd, @intCast(u6, tn.*));
+        toneOn(&me.gd, @intCast(u6, tn.*));
     }
 };

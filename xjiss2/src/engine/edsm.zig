@@ -17,7 +17,6 @@ pub const StageMachine = struct {
     current_stage: *Stage = undefined,
     md: *MessageDispatcher,
     allocator: Allocator,
-    data: ?*anyopaque = null,
 
     const Error = error {
         IsAlreadyRunning,
@@ -81,18 +80,19 @@ pub const StageMachine = struct {
         }
     };
 
-    pub fn init(a: Allocator, md: *MessageDispatcher, nstages: u4) StageMachine {
-        return StageMachine {
+    pub fn init(a: Allocator, md: *MessageDispatcher, name: []const u8, number: u16, nstages: u4) !StageMachine {
+        var sm = StageMachine {
             .md = md,
-            .stages = a.alloc(Stage, nstages) catch unreachable,
+            .stages = try a.alloc(Stage, nstages),
             .allocator = a,
         };
+        sm.name = try std.fmt.bufPrint(&sm.namebuf, "{s}-{}", .{name, number});
+        return sm;
     }
 
     pub fn onHeap(a: Allocator, md: *MessageDispatcher, name: []const u8, numb: u16, nstages: u4) !*StageMachine {
         var sm = try a.create(StageMachine);
-        sm.* = init(a, md, nstages);
-        sm.name = try std.fmt.bufPrint(&sm.namebuf, "{s}-{}", .{name, numb});
+        sm.* = try init(a, md, name, numb, nstages);
         return sm;
     }
 

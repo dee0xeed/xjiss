@@ -28,7 +28,7 @@ pub const Worker = struct {
     const M0_TONE_OFF = Message.M0;
     var number: u16 = 0;
 
-    const WorkerData = struct {
+    const Data = struct {
         pool: *MachinePool,
         listener: *StageMachine,
         client: *Client,
@@ -37,17 +37,21 @@ pub const Worker = struct {
         tone_number: u8,
     };
 
-    pub fn onHeap(a: Allocator, md: *MessageDispatcher, pool: *MachinePool) !*StageMachine {
+    sm: StageMachine,
+    wd: Data,
+
+    pub fn onHeap(a: Allocator, md: *MessageDispatcher, pool: *MachinePool) !*Worker {
 
         number += 1;
-        var me = try StageMachine.onHeap(a, md, "SERVER", number, 3);
-        me.stages[0] = .{.name = "INIT", .enter = &initEnter};
-        me.stages[1] = .{.name = "IDLE", .enter = &idleEnter};
-        me.stages[2] = .{.name = "RECV", .enter = &recvEnter};
+        var me = try a.create(Worker);
+        me.sm = try StageMachine.init(a, md, "SERVER", number, 3);
+        me.sm.stages[0] = .{.name = "INIT", .enter = &initEnter};
+        me.sm.stages[1] = .{.name = "IDLE", .enter = &idleEnter};
+        me.sm.stages[2] = .{.name = "RECV", .enter = &recvEnter};
 
-        var init = &me.stages[0];
-        var idle = &me.stages[1];
-        var recv = &me.stages[2];
+        var init = &me.sm.stages[0];
+        var idle = &me.sm.stages[1];
+        var recv = &me.sm.stages[2];
 
         init.setReflex(Message.M0, .{.transition = idle});
         idle.setReflex(Message.M1, .{.action = &idleM1});
@@ -56,76 +60,73 @@ pub const Worker = struct {
         recv.setReflex(Message.D2, .{.action = &recvD2});
         recv.setReflex(Message.M0, .{.transition = idle});
 
-        me.data = me.allocator.create(WorkerData) catch unreachable;
-        var wd = util.opaqPtrTo(me.data, *WorkerData);
-        wd.pool = pool;
+        me.wd.pool = pool;
         return me;
     }
 
-    pub fn setBuddy(self: *StageMachine, other: *StageMachine) void {
-        var wd = util.opaqPtrTo(self.data, *WorkerData);
-        wd.gui = other;
+    pub fn setBuddy(me: *Worker, other: *StageMachine) void {
+        me.wd.gui = other;
     }
 
-    fn initEnter(me: *StageMachine) void {
-        var wd = util.opaqPtrTo(me.data, *WorkerData);
-        wd.sk = InOut.init(me, -1);
-        me.msgTo(me, M0_IDLE, null);
+    fn initEnter(sm: *StageMachine) void {
+        var me = @fieldParentPtr(Worker, "sm", sm);
+        me.wd.sk = InOut.init(&me.sm, -1);
+        sm.msgTo(sm, M0_IDLE, null);
     }
 
-    fn idleEnter(me: *StageMachine) void {
-        var wd = util.opaqPtrTo(me.data, *WorkerData);
-        wd.listener = undefined;
-        wd.client = undefined;
-        wd.pool.put(me) catch unreachable;
+    fn idleEnter(sm: *StageMachine) void {
+        var me = @fieldParentPtr(Worker, "sm", sm);
+        me.wd.listener = undefined;
+        me.wd.client = undefined;
+        me.wd.pool.put(&me.sm) catch unreachable;
     }
 
-    fn idleM1(me: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
-        var wd = util.opaqPtrTo(me.data, *WorkerData);
+    fn idleM1(sm: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
+        var me = @fieldParentPtr(Worker, "sm", sm);
         var client = util.opaqPtrTo(dptr, *Client);
-        wd.listener = src.?;
-        wd.client = client;
-        me.msgTo(me, M0_RECV, null);
+        me.wd.listener = src.?;
+        me.wd.client = client;
+        sm.msgTo(sm, M0_RECV, null);
     }
 
-    fn recvEnter(me: *StageMachine) void {
-        var wd = util.opaqPtrTo(me.data, *WorkerData);
-        wd.sk.es.id = wd.client.fd;
-        wd.sk.es.enable() catch unreachable;
+    fn recvEnter(sm: *StageMachine) void {
+        var me = @fieldParentPtr(Worker, "sm", sm);
+        me.wd.sk.es.id = me.wd.client.fd;
+        me.wd.sk.es.enable() catch unreachable;
     }
 
-    fn recvD0(me: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
+    fn recvD0(sm: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
         _ = src;
         _ = dptr;
-        var wd = util.opaqPtrTo(me.data, *WorkerData);
-        const ba = wd.sk.bytes_avail;
+        var me = @fieldParentPtr(Worker, "sm", sm);
+        const ba = me.wd.sk.bytes_avail;
         if (0 == ba) {
-            me.msgTo(me, M0_IDLE, null);
-            me.msgTo(wd.listener, M0_GONE, wd.client);
+            sm.msgTo(sm, M0_IDLE, null);
+            sm.msgTo(me.wd.listener, M0_GONE, me.wd.client);
             return;
         }
         var cmd: [1]u8 = undefined;
-        _ = os.read(wd.sk.es.id, cmd[0..]) catch {
-            me.msgTo(me, M0_IDLE, null);
-            me.msgTo(wd.listener, M0_GONE, wd.client);
+        _ = os.read(me.wd.sk.es.id, cmd[0..]) catch {
+            sm.msgTo(sm, M0_IDLE, null);
+            sm.msgTo(me.wd.listener, M0_GONE, me.wd.client);
             return;
         };
         const byte = cmd[0];
-        wd.tone_number = byte & 0x3F;
+        me.wd.tone_number = byte & 0x3F;
         const pressed: bool = ((byte & 0x80) == 0x80);
         if (pressed) {
-            me.msgTo(wd.gui, M1_TONE_ON, &wd.tone_number);
+            sm.msgTo(me.wd.gui, M1_TONE_ON, &me.wd.tone_number);
         } else {
-            me.msgTo(wd.gui, M0_TONE_OFF, &wd.tone_number);
+            sm.msgTo(me.wd.gui, M0_TONE_OFF, &me.wd.tone_number);
         }
-        wd.sk.es.enable() catch unreachable;
+        me.wd.sk.es.enable() catch unreachable;
     }
 
-    fn recvD2(me: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
+    fn recvD2(sm: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
         _ = src;
         _ = dptr;
-        var wd = util.opaqPtrTo(me.data, *WorkerData);
-        me.msgTo(me, M0_IDLE, null);
-        me.msgTo(wd.listener, M0_GONE, wd.client);
+        var me = @fieldParentPtr(Worker, "sm", sm);
+        sm.msgTo(sm, M0_IDLE, null);
+        sm.msgTo(me.wd.listener, M0_GONE, me.wd.client);
     }
 };

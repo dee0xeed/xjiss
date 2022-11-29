@@ -200,7 +200,7 @@ pub const InOut = struct {
 
     fn getMessageCode(es: *EventSource, events: u32) !u8 {
 
-        const EPOLL = std.os.linux.EPOLL;
+        const EPOLL = os.linux.EPOLL;
         const FIONREAD = os.linux.T.FIONREAD;
         var self = @fieldParentPtr(InOut, "es", es);
 
