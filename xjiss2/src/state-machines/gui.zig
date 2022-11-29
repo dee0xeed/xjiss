@@ -411,16 +411,17 @@ pub const XjisGui = struct {
             _ = x11.XNextEvent(me.gd.display, &xe);
             const handler = me.gd.eventHandlers[@intCast(usize, xe.type)] orelse continue;
             if (handler(&xe, &me.gd))
-                sm.msgTo(null,  Message.M0, null);
+                os.raise(os.SIG.TERM) catch unreachable;
         }
         io.enable() catch unreachable;
     }
 
     fn workD2(sm: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
+        _ = sm;
         _ = src;
         _ = dptr;
         print("connection to X-server lost\n", .{});
-        sm.msgTo(null, Message.M0, null);
+        os.raise(os.SIG.TERM) catch unreachable;
     }
 
     // message from some server machine, turn a tone off
