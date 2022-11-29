@@ -16,7 +16,7 @@ const edsm = @import("../engine/edsm.zig");
 const StageMachine = edsm.StageMachine;
 
 const MachinePool = @import("../machine-pool.zig").MachinePool;
-const Client = @import("Client.zig").Client;
+//const Client = @import("Client.zig").Client;
 const util = @import("../util.zig");
 
 pub const Listener = struct {
@@ -83,16 +83,19 @@ pub const Listener = struct {
         _ = dptr;
         var me = @fieldParentPtr(Listener, "sm", sm);
         me.pd.lsk.io.es.enable() catch unreachable;
-        var fd = me.pd.lsk.acceptClient() catch unreachable;
-        var ptr = sm.allocator.create(Client) catch unreachable;
-        var client = @ptrCast(*Client, @alignCast(@alignOf(*Client), ptr));
-        client.fd = fd;
+        var peer = sm.allocator.create(ServerSocket.Client) catch unreachable;
+        peer.* = me.pd.lsk.acceptClient() orelse {
+            sm.allocator.destroy(peer);
+            return;
+        };
+
+        print("client from {}\n", .{peer.addr});
 
         var wsm = me.pd.wpool.get();
         if (wsm) |worker| {
-            sm.msgTo(worker, M1_MEET, client);
+            sm.msgTo(worker, M1_MEET, peer);
         } else {
-            sm.msgTo(sm, M0_GONE, client);
+            sm.msgTo(sm, M0_GONE, peer);
         }
     }
 
@@ -100,9 +103,9 @@ pub const Listener = struct {
     // or from self (if no workers were available)
     fn workM0(sm: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
         _ = src;
-        var client = util.opaqPtrTo(dptr, *Client);
-        os.close(client.fd);
-        sm.allocator.destroy(client);
+        var peer = util.opaqPtrTo(dptr, *ServerSocket.Client);
+        os.close(peer.fd);
+        sm.allocator.destroy(peer);
     }
 
     fn workS0(sm: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {

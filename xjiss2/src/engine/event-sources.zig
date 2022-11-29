@@ -274,6 +274,11 @@ pub const ServerSocket = struct {
     io: InOut,
     port: u16,
 
+    pub const Client = struct {
+        fd: i32,
+        addr: net.Address,
+    };
+
     pub fn init(sm: *StageMachine, port: u16) !ServerSocket {
         var id = try os.socket(os.AF.INET, os.SOCK.STREAM, os.IPPROTO.TCP);
         errdefer os.close(id);
@@ -291,9 +296,13 @@ pub const ServerSocket = struct {
         };
     }
 
-    pub fn acceptClient(self: *ServerSocket) !i32 {
+    pub fn acceptClient(self: *ServerSocket) ?Client {
         var addr: net.Address = undefined;
         var alen: os.socklen_t = @sizeOf(net.Address);
-        return try os.accept(self.io.es.id, &addr.any, &alen, 0);
+        const fd  = os.accept(self.io.es.id, &addr.any, &alen, 0) catch |err| {
+            print("OOPS, accept() failed: {}\n", .{err});
+            return null;
+        };
+        return .{.fd = fd, .addr = addr};
     }
 };

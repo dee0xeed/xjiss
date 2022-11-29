@@ -12,11 +12,11 @@ const Message = mq.Message;
 const esrc = @import("../engine//event-sources.zig");
 const EventSource = esrc.EventSource;
 const InOut = esrc.InOut;
+const Client = esrc.ServerSocket.Client;
 const edsm = @import("../engine/edsm.zig");
 const StageMachine = edsm.StageMachine;
 
 const MachinePool = @import("../machine-pool.zig").MachinePool;
-const Client = @import("Client.zig").Client;
 const util = @import("../util.zig");
 
 pub const Worker = struct {
