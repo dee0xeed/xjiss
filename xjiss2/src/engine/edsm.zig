@@ -32,12 +32,12 @@ pub const StageMachine = struct {
 
         const ReflexKind = enum {
             action,
-            transition
+            jumpto,
         };
 
         pub const Reflex = union(ReflexKind) {
             action: reactFnPtr,
-            transition: *Stage,
+            jumpto: *Stage,
         };
 
         /// number of rows in reflex matrix
@@ -106,6 +106,7 @@ pub const StageMachine = struct {
         var sender = if (msg.src) |s| s.name else "OS";
         if (msg.src == self) sender = "SELF";
 
+// uncomment to see a workflow, very useful for debugging
 //        print(
 //            "{s} @ {s} got '{c}{}' from {s}\n",
 //            .{self.name, current_stage.name, Stage.esk_tags[row], col, sender}
@@ -114,7 +115,7 @@ pub const StageMachine = struct {
         if (current_stage.reflexes[row][col]) |refl| {
             switch (refl) {
                 .action => |func| func(self, msg.src, msg.ptr),
-                .transition => |next_stage| {
+                .jumpto => |next_stage| {
                     if (current_stage.leave) |func| {
                         func(self);
                     }

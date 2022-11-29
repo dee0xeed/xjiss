@@ -68,11 +68,11 @@ pub const XjisSound = struct {
         var work = &me.sm.stages[1];
         var fail = &me.sm.stages[2];
 
-        init.setReflex(Message.M0, .{.transition = work});
+        init.setReflex(Message.M0, .{.jumpto = work});
         work.setReflex(Message.D1, .{.action = &workD1});
         work.setReflex(Message.D2, .{.action = &workD2});
-        work.setReflex(Message.M0, .{.transition = fail});
-        fail.setReflex(Message.M0, .{.transition = work});
+        work.setReflex(Message.M0, .{.jumpto = fail});
+        fail.setReflex(Message.M0, .{.jumpto = work});
 
         me.sd.jis = jis;
         return me;
