@@ -90,6 +90,7 @@ pub const XjisSound = struct {
         if (ret < 0) {
             print("pcmOpen(): {s}\n", .{alsaStrErr(@intCast(c_int, ret))});
             os.raise(os.SIG.TERM) catch unreachable;
+            return;
         }
 
         ret = alsa.snd_output_stdio_attach(
@@ -99,6 +100,7 @@ pub const XjisSound = struct {
         if (ret < 0) {
             print("{s}\n", .{alsaStrErr(@intCast(c_int, ret))});
             os.raise(os.SIG.TERM) catch unreachable;
+            return;
         }
 
         ret = pcmSetParams(
@@ -109,6 +111,7 @@ pub const XjisSound = struct {
         if (ret < 0) {
             print("pcmSetParams(): {s}\n", .{alsaStrErr(@intCast(c_int, ret))});
             os.raise(os.SIG.TERM) catch unreachable;
+            return;
         }
 
         _ = pcmDump(sd.handle, sd.output);
