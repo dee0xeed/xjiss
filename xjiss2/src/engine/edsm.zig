@@ -58,7 +58,7 @@ pub const StageMachine = struct {
         /// row 1: D0 D1 D2         : i/o (POLLIN, POLLOUT, POLLERR)
         /// row 2: S0 S1 S2 ... S15 : signals
         /// row 3: T0 T1 T2 ... T15 : timers
-        /// row 4: F0...........F15 : file system events
+        /// row 4: F0 F1 F2.....F15 : file system events
         reflexes: [nrows][ncols]?Reflex = [nrows][ncols]?Reflex {
             [_]?Reflex{null} ** ncols,
             [_]?Reflex{null} ** ncols,
