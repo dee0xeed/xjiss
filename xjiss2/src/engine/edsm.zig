@@ -26,7 +26,7 @@ pub const StageMachine = struct {
 
     pub const Stage = struct {
 
-        const reactFnPtr = *const fn(sm: *StageMachine, src: ?*StageMachine, data: ?*anyopaque) void;
+        const reactFnPtr = *const fn(sm: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void;
         const enterFnPtr = *const fn(sm: *StageMachine) void;
         const leaveFnPtr = enterFnPtr;
 
@@ -134,12 +134,12 @@ pub const StageMachine = struct {
         }
     }
 
-    pub fn msgTo(self: *StageMachine, dst: ?*StageMachine, code: u4, data: ?*anyopaque) void {
+    pub fn msgTo(self: *StageMachine, dst: ?*StageMachine, code: u4, dptr: ?*anyopaque) void {
         const msg = Message {
             .src = self,
             .dst = dst,
             .code = code,
-            .ptr = data,
+            .ptr = dptr,
         };
         // message buffer is not growable so this will panic
         // when there is no more space left in the buffer
