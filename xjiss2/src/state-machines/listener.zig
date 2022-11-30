@@ -54,7 +54,8 @@ pub const Listener = struct {
         var work = &me.sm.stages[1];
 
         init.setReflex(Message.M0, .{.jump_to = work});
-        work.setReflex(Message.D0, .{.do_this = &workD0});
+        work.setReflex(Message.D2, .{.do_this = &workD2});
+        work.setReflex(Message.D3, .{.do_this = &workD3});
         work.setReflex(Message.M0, .{.do_this = &workM0});
         work.setReflex(Message.S0, .{.do_this = &workS0});
         work.setReflex(Message.S1, .{.do_this = &workS0});
@@ -75,17 +76,23 @@ pub const Listener = struct {
 
     fn workEnter(sm: *StageMachine) void {
         var me = @fieldParentPtr(Listener, "sm", sm);
-        me.pd.lsk.io.es.enable() catch unreachable;
+        me.pd.lsk.es.enable() catch unreachable;
         me.pd.sg0.es.enable() catch unreachable;
         me.pd.sg1.es.enable() catch unreachable;
     }
 
+    fn workD2(sm: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
+        _ = sm;
+        _ = src;
+        _ = dptr;
+    }
+
     // incoming connection
-    fn workD0(sm: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
+    fn workD3(sm: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
         _ = src;
         _ = dptr;
         var me = @fieldParentPtr(Listener, "sm", sm);
-        me.pd.lsk.io.es.enable() catch unreachable;
+        me.pd.lsk.es.enable() catch unreachable;
         var peer = sm.allocator.create(ServerSocket.Client) catch unreachable;
         peer.* = me.pd.lsk.acceptClient() orelse {
             sm.allocator.destroy(peer);
@@ -120,7 +127,7 @@ pub const Listener = struct {
 
     fn workLeave(sm: *StageMachine) void {
         var me = @fieldParentPtr(Listener, "sm", sm);
-        me.pd.lsk.io.es.disable() catch unreachable;
+        me.pd.lsk.es.disable() catch unreachable;
         print("Bye!\n", .{});
     }
 };

@@ -55,7 +55,7 @@ pub const StageMachine = struct {
 
         /// reflex matrix
         /// row 0: M0 M1 M2 ... M15 : internal messages
-        /// row 1: D0 D1 D2         : i/o (POLLIN, POLLOUT, POLLERR)
+        /// row 1: D0 D1 D2 D3      : i/o (POLLIN, POLLOUT, POLLERR)
         /// row 2: S0 S1 S2 ... S15 : signals
         /// row 3: T0 T1 T2 ... T15 : timers
         /// row 4: F0 F1 F2.....F15 : file system events

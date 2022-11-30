@@ -52,12 +52,14 @@ pub const Message = struct {
     pub const M7: u4 = 7;
 
     pub const DROW: u8 = (1 << 4);
-    /// read()/accept() will not block (POLLIN)
+    /// read() will not block (POLLIN)
     pub const D0: u8 = DROW | 0;
     /// write() will not block/connection established (POLLOUT)
     pub const D1: u8 = DROW | 1;
     /// error happened (POLLERR, POLLHUP, POLLRDHUP)
     pub const D2: u8 = DROW | 2;
+    /// accept() will not block (POLLIN)
+    pub const D3: u8 = DROW | 3;
 
     /// signals
     const SROW: u8 = (2 << 4);

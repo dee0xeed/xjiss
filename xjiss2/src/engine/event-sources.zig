@@ -132,6 +132,57 @@ pub const Timer = struct {
     }
 };
 
+pub const ServerSocket = struct {
+
+    es: EventSource,
+    port: u16,
+
+    pub const Client = struct {
+        fd: i32,
+        addr: net.Address,
+    };
+
+    pub fn init(sm: *StageMachine, port: u16, backlog: u31) !ServerSocket {
+        var id = try os.socket(os.AF.INET, os.SOCK.STREAM, os.IPPROTO.TCP);
+        errdefer os.close(id);
+        const yes = mem.toBytes(@as(c_int, 1));
+        try os.setsockopt(id, os.SOL.SOCKET, os.SO.REUSEADDR, &yes);
+        const addr = net.Address.initIp4(.{0,0,0,0}, port);
+        var socklen = addr.getOsSockLen();
+        try os.bind(id, &addr.any, socklen);
+        try os.listen(id, backlog);
+
+        return ServerSocket {
+            .es = .{
+                .id = id,
+                .owner = sm,
+                .getMessageCodeImpl = &getMessageCode,
+                .eq = sm.md.eq,
+            },
+            .port = port,
+       };
+    }
+
+    fn getMessageCode(es: *EventSource, events: u32) !u8 {
+        const EPOLL = os.linux.EPOLL;
+        // var self = @fieldParentPtr(ServerSocket, "es", es);
+        _ = es;
+        if (0 != events & (EPOLL.ERR | EPOLL.HUP | EPOLL.RDHUP))
+            return Message.D2;
+        return Message.D3;
+    }
+
+    pub fn acceptClient(self: *ServerSocket) ?Client {
+        var addr: net.Address = undefined;
+        var alen: os.socklen_t = @sizeOf(net.Address);
+        const fd  = os.accept(self.es.id, &addr.any, &alen, 0) catch |err| {
+            print("OOPS, accept() failed: {}\n", .{err});
+            return null;
+        };
+        return .{.fd = fd, .addr = addr};
+    }
+};
+
 pub const FileSystem = struct {
     es: EventSource,
     // const buf_len = 1024;
@@ -269,39 +320,3 @@ pub const ClientSocket = struct {
     }
 };
 
-pub const ServerSocket = struct {
-
-    io: InOut,
-    port: u16,
-
-    pub const Client = struct {
-        fd: i32,
-        addr: net.Address,
-    };
-
-    pub fn init(sm: *StageMachine, port: u16, backlog: u31) !ServerSocket {
-        var id = try os.socket(os.AF.INET, os.SOCK.STREAM, os.IPPROTO.TCP);
-        errdefer os.close(id);
-        const yes = mem.toBytes(@as(c_int, 1));
-        try os.setsockopt(id, os.SOL.SOCKET, os.SO.REUSEADDR, &yes);
-        const addr = net.Address.initIp4(.{0,0,0,0}, port);
-        var socklen = addr.getOsSockLen();
-        try os.bind(id, &addr.any, socklen);
-        try os.listen(id, backlog);
-
-        return ServerSocket {
-            .io = InOut.init(sm, id),
-            .port = port,
-        };
-    }
-
-    pub fn acceptClient(self: *ServerSocket) ?Client {
-        var addr: net.Address = undefined;
-        var alen: os.socklen_t = @sizeOf(net.Address);
-        const fd  = os.accept(self.io.es.id, &addr.any, &alen, 0) catch |err| {
-            print("OOPS, accept() failed: {}\n", .{err});
-            return null;
-        };
-        return .{.fd = fd, .addr = addr};
-    }
-};
