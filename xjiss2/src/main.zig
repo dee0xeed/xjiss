@@ -57,7 +57,7 @@ pub fn main() !void {
             server.setBuddy(&gui.sm);
             try server.sm.run();
         }
-        var reception = try Listener.onHeap(allocator, &md, port, &pool);
+        var reception = try Listener.onHeap(allocator, &md, port, 4, &pool);
         try reception.sm.run();
     } else if (4 == std.os.argv.len) {
         // client mode

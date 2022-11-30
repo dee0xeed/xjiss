@@ -279,7 +279,7 @@ pub const ServerSocket = struct {
         addr: net.Address,
     };
 
-    pub fn init(sm: *StageMachine, port: u16) !ServerSocket {
+    pub fn init(sm: *StageMachine, port: u16, backlog: u31) !ServerSocket {
         var id = try os.socket(os.AF.INET, os.SOCK.STREAM, os.IPPROTO.TCP);
         errdefer os.close(id);
         const yes = mem.toBytes(@as(c_int, 1));
@@ -287,7 +287,7 @@ pub const ServerSocket = struct {
         const addr = net.Address.initIp4(.{0,0,0,0}, port);
         var socklen = addr.getOsSockLen();
         try os.bind(id, &addr.any, socklen);
-        try os.listen(id, 128);
+        try os.listen(id, backlog);
 
         return ServerSocket {
             .io = InOut.init(sm, id),

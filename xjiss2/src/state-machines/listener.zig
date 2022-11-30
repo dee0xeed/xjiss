@@ -30,6 +30,7 @@ pub const Listener = struct {
         sg1: Signal,
         lsk: ServerSocket,
         port: u16,
+        backlog: u31,
         wpool: *MachinePool,
     };
 
@@ -40,6 +41,7 @@ pub const Listener = struct {
         a: Allocator,
         md: *MessageDispatcher,
         port: u16,
+        backlog: u31,
         wpool: *MachinePool
     ) !*Listener {
 
@@ -58,6 +60,7 @@ pub const Listener = struct {
         work.setReflex(Message.S1, .{.do_this = &workS0});
 
         me.pd.port = port;
+        me.pd.backlog = backlog;
         me.pd.wpool = wpool;
         return me;
     }
@@ -66,7 +69,7 @@ pub const Listener = struct {
         var me = @fieldParentPtr(Listener, "sm", sm);
         me.pd.sg0 = Signal.init(&me.sm, os.SIG.INT, Message.S0) catch unreachable;
         me.pd.sg1 = Signal.init(&me.sm, os.SIG.TERM, Message.S1) catch unreachable;
-        me.pd.lsk = ServerSocket.init(&me.sm, me.pd.port) catch unreachable;
+        me.pd.lsk = ServerSocket.init(&me.sm, me.pd.port, me.pd.backlog) catch unreachable;
         sm.msgTo(sm, M0_WORK, null);
     }
 
