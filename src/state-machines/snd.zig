@@ -40,9 +40,10 @@ pub const XjisSound = struct {
     const sampling_rate: c_int = 48000;
     const latency = 20000; // usec
     // const device = "hw:0,0";
-    const device = "plughw:0,0";
+    const default_device = "plughw:0,0";
 
     const SoundData = struct {
+        device: []const u8,
         io: EventSource,
         jis: *Jis,
         handle: *alsa.snd_pcm_t,
@@ -71,6 +72,7 @@ pub const XjisSound = struct {
 
         me.data = me.allocator.create(SoundData) catch unreachable;
         var sd = util.opaqPtrTo(me.data, *SoundData);
+        sd.device = os.getenv("XJIS_PLAYBACK_DEVICE") orelse default_device;
         sd.jis = jis;
         return me;
     }
@@ -82,7 +84,7 @@ pub const XjisSound = struct {
 
         ret = pcmOpen(
             @ptrCast([*c]?*alsa.snd_pcm_t, @alignCast(@alignOf([*c]*alsa.snd_pcm_t), &sd.handle)),
-            device, alsa.SND_PCM_STREAM_PLAYBACK, 0
+            sd.device.ptr, alsa.SND_PCM_STREAM_PLAYBACK, 0
         );
         if (ret < 0) {
             print("pcmOpen(): {s}\n", .{alsaStrErr(@intCast(c_int, ret))});
