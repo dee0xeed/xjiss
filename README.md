@@ -81,8 +81,10 @@ crw-rw----+ 1 root audio 116,  6 Nov 30 20:21 pcmC1D0p
 
 * Run `xjiss` with environment variable `XJIS_PLAYBACK_DEVICE` set:
 
-`XJIS_PLAYBACK_DEVICE="plughw:0,3" xjiss s 3333`
-`XJIS_PLAYBACK_DEVICE="plughw:1,0" xjiss s 3333`
+```
+XJIS_PLAYBACK_DEVICE="plughw:0,3" xjiss s 3333
+XJIS_PLAYBACK_DEVICE="plughw:1,0" xjiss s 3333
+```
 
 `plughw:0,3` corresponds to `pcmC0D3p`, `plughw:1,0` to `pcmC1D0p` and so on.
 
