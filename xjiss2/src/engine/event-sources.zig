@@ -51,24 +51,24 @@ pub const Signal = struct {
     code: u8,
     info: SigInfo = undefined,
 
+    fn getId(signo: u6) !i32 {
+        var sset: SigSet = os.empty_sigset;
+        os.linux.sigaddset(&sset, signo);
+        //sigProcMask(@intCast(c_int, SIG.BLOCK), &sset, null);
+        _ = os.linux.sigprocmask(SIG.BLOCK, &sset, null);
+        return signalFd(-1, &sset, 0);
+    }
+
     pub fn init(sm: *StageMachine, signo: u6, code: u8) !Signal {
         return Signal {
             .es = .{
-                .id = try getSignalId(signo),
+                .id = try getId(signo),
                 .owner = sm,
                 .getMessageCodeImpl = &readInfo,
                 .eq = sm.md.eq,
             },
             .code = code,
         };
-    }
-
-    fn getSignalId(signo: u6) !i32 {
-        var sset: SigSet = os.empty_sigset;
-        os.linux.sigaddset(&sset, signo);
-        //sigProcMask(@intCast(c_int, SIG.BLOCK), &sset, null);
-        _ = os.linux.sigprocmask(SIG.BLOCK, &sset, null);
-        return signalFd(-1, &sset, 0);
     }
 
     fn readInfo(es: *EventSource, event_mask: u32) !u8 {
@@ -142,19 +142,22 @@ pub const ServerSocket = struct {
         addr: net.Address,
     };
 
-    pub fn init(sm: *StageMachine, port: u16, backlog: u31) !ServerSocket {
-        var id = try os.socket(os.AF.INET, os.SOCK.STREAM, os.IPPROTO.TCP);
-        errdefer os.close(id);
+    fn getId(port: u16, backlog: u31) !i32 {
+        var fd = try os.socket(os.AF.INET, os.SOCK.STREAM, os.IPPROTO.TCP);
+        errdefer os.close(fd);
         const yes = mem.toBytes(@as(c_int, 1));
-        try os.setsockopt(id, os.SOL.SOCKET, os.SO.REUSEADDR, &yes);
+        try os.setsockopt(fd, os.SOL.SOCKET, os.SO.REUSEADDR, &yes);
         const addr = net.Address.initIp4(.{0,0,0,0}, port);
         var socklen = addr.getOsSockLen();
-        try os.bind(id, &addr.any, socklen);
-        try os.listen(id, backlog);
+        try os.bind(fd, &addr.any, socklen);
+        try os.listen(fd, backlog);
+        return fd;
+    }
 
+    pub fn init(sm: *StageMachine, port: u16, backlog: u31) !ServerSocket {
         return ServerSocket {
             .es = .{
-                .id = id,
+                .id = try getId(port, backlog),
                 .owner = sm,
                 .getMessageCodeImpl = &getMessageCode,
                 .eq = sm.md.eq,
