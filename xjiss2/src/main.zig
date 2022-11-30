@@ -5,6 +5,7 @@ const mque = @import("engine/message-queue.zig");
 const eque = @import("engine/event-capture.zig");
 
 const Jis = @import("synt.zig").Jis;
+const Term = @import("state-machines/term.zig").Term;
 const Gui = @import("state-machines/gui.zig").XjisGui;
 const Snd = @import("state-machines/snd.zig").XjisSound;
 const MachinePool = @import("machine-pool.zig").MachinePool;
@@ -37,6 +38,7 @@ pub fn main() !void {
 
     var jis = Jis.init();
     var gui = try Gui.onHeap(allocator, &md, &jis);
+    var term = try Term.onHeap(allocator, &md);
 
     if (3 == std.os.argv.len) {
         // server mode
@@ -78,6 +80,7 @@ pub fn main() !void {
     }
 
     try gui.sm.run();
+    try term.sm.run();
     try md.loop();
     md.eq.fini();
 }

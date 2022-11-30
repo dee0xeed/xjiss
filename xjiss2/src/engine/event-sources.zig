@@ -320,4 +320,3 @@ pub const ClientSocket = struct {
         } else unreachable;
     }
 };
-

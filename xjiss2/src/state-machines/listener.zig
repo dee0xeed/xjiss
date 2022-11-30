@@ -16,7 +16,6 @@ const edsm = @import("../engine/edsm.zig");
 const StageMachine = edsm.StageMachine;
 
 const MachinePool = @import("../machine-pool.zig").MachinePool;
-//const Client = @import("Client.zig").Client;
 const util = @import("../util.zig");
 
 pub const Listener = struct {
@@ -26,8 +25,6 @@ pub const Listener = struct {
     const M0_GONE = Message.M0;
 
     const Data = struct {
-        sg0: Signal,
-        sg1: Signal,
         lsk: ServerSocket,
         port: u16,
         backlog: u31,
@@ -48,7 +45,7 @@ pub const Listener = struct {
         var me = try a.create(Listener);
         me.sm = try StageMachine.init(a, md, "LISTENER", 1, 2);
         me.sm.stages[0] = .{.sm = &me.sm, .name = "INIT", .enter = &initEnter};
-        me.sm.stages[1] = .{.sm = &me.sm, .name = "WORK", .enter = &workEnter, .leave = &workLeave};
+        me.sm.stages[1] = .{.sm = &me.sm, .name = "WORK", .enter = &workEnter};
 
         var init = &me.sm.stages[0];
         var work = &me.sm.stages[1];
@@ -57,8 +54,6 @@ pub const Listener = struct {
         work.setReflex(Message.D2, .{.do_this = &workD2});
         work.setReflex(Message.D3, .{.do_this = &workD3});
         work.setReflex(Message.M0, .{.do_this = &workM0});
-        work.setReflex(Message.S0, .{.do_this = &workS0});
-        work.setReflex(Message.S1, .{.do_this = &workS0});
 
         me.pd.port = port;
         me.pd.backlog = backlog;
@@ -68,8 +63,6 @@ pub const Listener = struct {
 
     fn initEnter(sm: *StageMachine) void {
         var me = @fieldParentPtr(Listener, "sm", sm);
-        me.pd.sg0 = Signal.init(&me.sm, os.SIG.INT, Message.S0) catch unreachable;
-        me.pd.sg1 = Signal.init(&me.sm, os.SIG.TERM, Message.S1) catch unreachable;
         me.pd.lsk = ServerSocket.init(&me.sm, me.pd.port, me.pd.backlog) catch unreachable;
         sm.msgTo(sm, M0_WORK, null);
     }
@@ -77,8 +70,6 @@ pub const Listener = struct {
     fn workEnter(sm: *StageMachine) void {
         var me = @fieldParentPtr(Listener, "sm", sm);
         me.pd.lsk.es.enable() catch unreachable;
-        me.pd.sg0.es.enable() catch unreachable;
-        me.pd.sg1.es.enable() catch unreachable;
     }
 
     // Q: is this ever possible?
@@ -118,19 +109,5 @@ pub const Listener = struct {
         os.close(peer.fd);
         print("client from {} gone\n", .{peer.addr});
         sm.allocator.destroy(peer);
-    }
-
-    fn workS0(sm: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
-        _ = src;
-        var es = util.opaqPtrTo(dptr, *EventSource);
-        var sg = @fieldParentPtr(Signal, "es", es);
-        print("got signal #{} from PID {}\n", .{sg.info.signo, sg.info.pid});
-        sm.msgTo(null, Message.M0, null);
-    }
-
-    fn workLeave(sm: *StageMachine) void {
-        var me = @fieldParentPtr(Listener, "sm", sm);
-        me.pd.lsk.es.disable() catch unreachable;
-        print("Bye!\n", .{});
     }
 };
