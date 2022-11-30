@@ -168,6 +168,7 @@ pub const ServerSocket = struct {
         // var self = @fieldParentPtr(ServerSocket, "es", es);
         _ = es;
         if (0 != events & (EPOLL.ERR | EPOLL.HUP | EPOLL.RDHUP))
+            // Q: is this ever possible?
             return Message.D2;
         return Message.D3;
     }

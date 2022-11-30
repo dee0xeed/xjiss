@@ -81,6 +81,7 @@ pub const Listener = struct {
         me.pd.sg1.es.enable() catch unreachable;
     }
 
+    // Q: is this ever possible?
     fn workD2(sm: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
         var me = @fieldParentPtr(Listener, "sm", sm);
         _ = src;
