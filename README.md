@@ -64,6 +64,27 @@ Legend
 3:2 - frequency ratio (pure/just fifth for this case)
 ```
 
+## Trouble shooting
+
+### No sound (or `pcmOpen()` fails)
+
+By default `xjiss` uses `/dev/snd/pcmC0D0p` playback device, which might not present
+on some particular system. In this case do the following
+
+* Find out which playback devices you have:
+
+```
+$ ls -l /dev/snd | grep p$
+crw-rw----+ 1 root audio 116,  3 Nov 30 20:08 pcmC0D3p
+crw-rw----+ 1 root audio 116,  6 Nov 30 20:21 pcmC1D0p
+```
+
+* Run `xjiss` with environment variable `XJIS_PLAYBACK_DEVICE` set:
+
+`XJIS_PLAYBACK_DEVICE="plughw:0,3" xjiss s 3333`
+`XJIS_PLAYBACK_DEVICE="plughw:1,0" xjiss s 3333`
+
+`plughw:0,3` corresponds to `pcmC0D3p`, `plughw:1,0` to `pcmC1D0p` and so on.
 
 ## Links
 
