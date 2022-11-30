@@ -82,9 +82,11 @@ pub const Listener = struct {
     }
 
     fn workD2(sm: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
-        _ = sm;
+        var me = @fieldParentPtr(Listener, "sm", sm);
         _ = src;
         _ = dptr;
+        print("OOPS, error on listening socket (fd={}) happened\n", .{me.pd.lsk.es.id});
+        os.raise(os.SIG.TERM) catch unreachable;
     }
 
     // incoming connection
