@@ -2,20 +2,18 @@
 const std = @import("std");
 const os = std.os;
 const print = std.debug.print;
-// const Allocator = std.mem.Allocator;
+const Allocator = std.mem.Allocator;
 
 const mq = @import("../engine/message-queue.zig");
 const MessageDispatcher = mq.MessageDispatcher;
 const MessageQueue = mq.MessageQueue;
 const Message = mq.Message;
 const esrc = @import("../engine//event-sources.zig");
-//const EventSource = esrc.EventSource;
-//const ServerSocket = esrc.ServerSocket;
+const EventSource = esrc.EventSource;
 const Signal = esrc.Signal;
 const edsm = @import("../engine/edsm.zig");
 const StageMachine = edsm.StageMachine;
-
-// const util = @import("../util.zig");
+const util = @import("../util.zig");
 
 pub const Term = struct {
 
