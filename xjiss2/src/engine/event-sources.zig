@@ -292,7 +292,6 @@ pub const ServerSocket = struct {
         return ServerSocket {
             .io = InOut.init(sm, id),
             .port = port,
-//            .addr = net.Address.resolveIp(host, port) catch unreachable,
         };
     }
 
