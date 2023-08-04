@@ -107,8 +107,8 @@ pub const Worker = struct {
     fn workM0(sm: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
         _ = src;
         var me = @fieldParentPtr(Worker, "sm", sm);
-        const cmd = @ptrToInt(dptr) - 1;
-        me.wd.buf[me.wd.cnt] = @intCast(u8, cmd);
+        const cmd: u8 = @intCast(@intFromPtr(dptr) - 1);
+        me.wd.buf[me.wd.cnt] = cmd;
         me.wd.cnt += 1;
         me.wd.sk.io.enableOut() catch unreachable;
     }

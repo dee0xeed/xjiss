@@ -154,7 +154,7 @@ pub const Jis = struct {
         while (k < buf.len / 2) : (k += 1) {
 
             var s: i16 = 0;
-            for (jis.tones) |*t, j| {
+            for (&jis.tones, 0..) |*t, j| {
 
                 var ti = &scale[j];
                 var sj: i16 = 0;
@@ -162,28 +162,35 @@ pub const Jis = struct {
                 if (.silent == t.stage)
                     continue;
 
-                var a = @intToFloat(f32, jis.amp);
-                var o = @intToFloat(f32, jis.octave + 1);
-                var b: u32 = @floatToInt(u32, jis.timbre * @intToFloat(f32, ti.period) / o);
+                var a: f32 = @floatFromInt(jis.amp);
+                var o: f32 = @floatFromInt(jis.octave + 1);
+                var p: f32 = @floatFromInt(ti.period);
+                var b: u32 = @intFromFloat(jis.timbre * p / o);
 
-                if (t.phase < b)
-                    sj = @floatToInt(i16, a * math.sin(o * 2.0 * math.pi * @intToFloat(f32, t.phase) / @intToFloat(f32, ti.period)));
+                if (t.phase < b) {
+                    var ph: f32 = @floatFromInt(t.phase);
+                    var pe: f32 = @floatFromInt(ti.period);
+                    sj = @intFromFloat(a * math.sin(o * 2.0 * math.pi * ph / pe));
+                }
 
                 if (.attack == t.stage) {
                     const x = (t.nper * ti.period + t.phase) / (jis.att * ti.period);
-                    const m = @floatToInt(i16, 0.0 + @intToFloat(f32, x));
+                    const xf: f32 = @floatFromInt(x);
+                    const m: i16 = @intFromFloat(0.0 + xf);
                     sj *= m;
                 }
                 if (.release == t.stage) {
                     const x = (t.nper * ti.period + t.phase)/(jis.rel * ti.period);
-                    const m = @floatToInt(i16, 1.0 - @intToFloat(f32, x));
+                    const xf: f32 = @floatFromInt(x);
+                    const m: i16 = @intFromFloat(1.0 - xf);
                     sj *= m;
                 }
 
                 s += sj;
                 t.phase += 1;
+                const ou: u32 = @intFromFloat(o);
 
-                if (t.phase >= ti.period / @floatToInt(u32, o)) {
+                if (t.phase >= ti.period / ou) {
 
                     t.phase = 0;
                     t.nper += 1;
@@ -192,7 +199,7 @@ pub const Jis = struct {
                         if (jis.rel == t.nper) {
                             t.stage = .silent;
                             t.nper = 0;
-                            jis.rel_mask &= ~(@as(u64,1) << @intCast(u6, j));
+                            jis.rel_mask &= ~(@as(u64,1) << @intCast(j));
                         }
                     }
 
@@ -200,7 +207,7 @@ pub const Jis = struct {
                         if (jis.att == t.nper) {
                             t.stage = .sustain;
                             t.nper = 0;
-                            jis.att_mask &= ~(@as(u64,1) << @intCast(u6, j));
+                            jis.att_mask &= ~(@as(u64,1) << @intCast(j));
                         }
                     }
                 }

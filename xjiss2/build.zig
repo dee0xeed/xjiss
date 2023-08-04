@@ -3,13 +3,20 @@ const std = @import("std");
 pub fn build(b: *std.build.Builder) void {
 
     const target = b.standardTargetOptions(.{});
-    const mode = b.standardReleaseOptions();
-    const exe = b.addExecutable("xjiss", "src/main.zig");
-    exe.single_threaded = true;
-    exe.linkLibC();
+    const optimize = b.standardOptimizeOption(.{});
+
+    const exe = b.addExecutable(.{
+        .name = "xjiss",
+        .root_source_file = .{ .path = "src/main.zig" },
+        .target = target,
+        .optimize = optimize,
+        .single_threaded = true,
+//        .strip = true,
+        .link_libc = true,
+    });
+
     exe.linkSystemLibrary("X11");
     exe.linkSystemLibrary("asound");
-    exe.setTarget(target);
-    exe.setBuildMode(mode);
-    exe.install();
+
+    b.installArtifact(exe);
 }

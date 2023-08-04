@@ -40,7 +40,7 @@ pub const EventQueue = struct {
         const n = epollWait(self.fd, events[0..], wait_forever);
 
         for (events[0..n]) |ev| {
-            const es = @intToPtr(*EventSource, ev.data.ptr);
+            const es: *EventSource = @ptrFromInt(ev.data.ptr);
             const code = try es.getMessageCode(ev.events);
             const msg = Message {
                 .src = null,
@@ -65,7 +65,7 @@ pub const EventQueue = struct {
 
         var ee = EpollEvent {
             .events = em,
-            .data = EpollData{.ptr = @ptrToInt(es)},
+            .data = EpollData{.ptr = @intFromPtr(es)},
         };
 
         // emulate FreeBSD kqueue behavior
@@ -80,7 +80,7 @@ pub const EventQueue = struct {
     pub fn disableEventSource(self: *EventQueue, es: *EventSource) !void {
         var ee = EpollEvent {
             .events = 0,
-            .data = EpollData{.ptr = @ptrToInt(es)},
+            .data = EpollData{.ptr = @intFromPtr(es)},
         };
         try epollCtl(self.fd, EPOLL.CTL_MOD, es.id, &ee);
     }

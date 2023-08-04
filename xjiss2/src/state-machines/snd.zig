@@ -86,21 +86,22 @@ pub const XjisSound = struct {
         var ret: c_int = 0;
 
         ret = pcmOpen(
-            @ptrCast([*c]?*alsa.snd_pcm_t, @alignCast(@alignOf([*c]*alsa.snd_pcm_t), &sd.handle)),
+            //@ptrCast([*c]?*alsa.snd_pcm_t, @alignCast(@alignOf([*c]*alsa.snd_pcm_t), &sd.handle)),
+            @ptrCast(@alignCast(&sd.handle)),
             sd.device.ptr, alsa.SND_PCM_STREAM_PLAYBACK, 0
         );
         if (ret < 0) {
-            print("pcmOpen(): {s}\n", .{alsaStrErr(@intCast(c_int, ret))});
+            print("pcmOpen(): {s}\n", .{alsaStrErr(@intCast(ret))});
             os.raise(os.SIG.TERM) catch unreachable;
             return;
         }
 
         ret = alsa.snd_output_stdio_attach(
-            @ptrCast([*c]?*alsa.snd_output_t, @alignCast(@alignOf([*c]*alsa.snd_output_t), &sd.output)),
+            @ptrCast(@alignCast(&sd.output)),
             alsa.stdout, 0
         );
         if (ret < 0) {
-            print("{s}\n", .{alsaStrErr(@intCast(c_int, ret))});
+            print("{s}\n", .{alsaStrErr(@intCast(ret))});
             os.raise(os.SIG.TERM) catch unreachable;
             return;
         }
@@ -111,7 +112,7 @@ pub const XjisSound = struct {
             2, sampling_rate, 0, latency
         );
         if (ret < 0) {
-            print("pcmSetParams(): {s}\n", .{alsaStrErr(@intCast(c_int, ret))});
+            print("pcmSetParams(): {s}\n", .{alsaStrErr(@intCast(ret))});
             os.raise(os.SIG.TERM) catch unreachable;
             return;
         }
@@ -125,7 +126,7 @@ pub const XjisSound = struct {
         var me = @fieldParentPtr(XjisSound, "sm", sm);
         initAlsa(&me.sd);
         me.sd.snd_buf = sm.allocator.alloc(i16, 2 * me.sd.nframes) catch unreachable;
-        mem.set(i16, me.sd.snd_buf, 0);
+        @memset(me.sd.snd_buf, 0);
         me.sd.io = InOut.init(&me.sm, -1);
         sm.msgTo(sm, M0_WORK, null);
     }
@@ -137,7 +138,7 @@ pub const XjisSound = struct {
 
         ret = pcmFdCount(me.sd.handle);
         if (ret < 0) {
-            print("getPcmFdCount(): {s}\n", .{alsaStrErr(@intCast(c_int, ret))});
+            print("getPcmFdCount(): {s}\n", .{alsaStrErr(@intCast(ret))});
             os.raise(os.SIG.TERM) catch unreachable;
             return;
         }
@@ -148,7 +149,7 @@ pub const XjisSound = struct {
         }
         ret = pcmFd(me.sd.handle, &pcm_poll, 1);
         if (ret < 0) {
-            print("getPcmFd(): {s}\n", .{alsaStrErr(@intCast(c_int, ret))});
+            print("getPcmFd(): {s}\n", .{alsaStrErr(@intCast(ret))});
             os.raise(os.SIG.TERM) catch unreachable;
             return;
         }
@@ -163,7 +164,7 @@ pub const XjisSound = struct {
 
         var ret = pcmWrite(me.sd.handle, me.sd.snd_buf.ptr, me.sd.nframes);
         if (ret < 0) {
-            print("pcmWrite(): {s}\n", .{alsaStrErr(@intCast(c_int, ret))});
+            print("pcmWrite(): {s}\n", .{alsaStrErr(@intCast(ret))});
             sm.msgTo(sm, M0_FAIL, null);
             return;
         } else if (ret != me.sd.nframes) {
