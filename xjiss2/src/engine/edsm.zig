@@ -26,16 +26,20 @@ pub const StageMachine = struct {
 
     pub const Stage = struct {
 
-        const reactFnPtr = *const fn(sm: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void;
-        const enterFnPtr = *const fn(sm: *StageMachine) void;
+//        const reactFnPtr = *const fn(sm: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void;
+//        const enterFnPtr = *const fn(sm: *StageMachine) void;
+        const reactFnPtr = *const fn(*StageMachine, ?*StageMachine, ?*anyopaque) void;
+        const enterFnPtr = *const fn(*StageMachine) void;
+
         const leaveFnPtr = enterFnPtr;
 
-        const ReflexKind = enum {
-            do_this,
-            jump_to,
-        };
+//        const ReflexKind = enum {
+//            do_this,
+//            jump_to,
+//        };
 
-        pub const Reflex = union(ReflexKind) {
+//        pub const Reflex = union(ReflexKind) {
+        pub const Reflex = union(enum) {
             do_this: reactFnPtr,
             jump_to: *Stage,
         };
@@ -83,7 +87,7 @@ pub const StageMachine = struct {
     pub fn init(a: Allocator, md: *MessageDispatcher, name: []const u8, number: u16, nstages: u4) !StageMachine {
         var sm = StageMachine {
             .md = md,
-            .stages = try a.alloc(Stage, nstages),
+            .stages = try a.alloc(Stage, nstages), // :(
             .allocator = a,
         };
         sm.name = try std.fmt.bufPrint(&sm.namebuf, "{s}-{}", .{name, number});

@@ -155,7 +155,7 @@ pub const EventSource = struct {
             .io => try getIoId(self.subkind, args),
             .sg => blk: {
                 if (1 != args.len) unreachable;
-                const signo = @intCast(u6, args[0]);
+                const signo: u6 = @intCast(args[0]);
                 break :blk try getSignalId(signo);
             },
             .tm => if (0 == args.len) try getTimerId() else unreachable,
@@ -202,7 +202,7 @@ pub const EventSource = struct {
             .tm => &self.info.tm.nexp,
             else => unreachable,
         };
-        var p2 = @ptrCast([*]u8, @alignCast(@alignOf([*]u8), p1));
+        var p2: [*]u8 = @ptrCast(@alignCast(p1));
         var buf = p2[0..@sizeOf(AboutTimer)];
         _ = try os.read(self.id, buf[0..]);
     }
@@ -212,7 +212,7 @@ pub const EventSource = struct {
             .sg => &self.info.sg.sig_info,
             else => unreachable,
         };
-        var p2 = @ptrCast([*]u8, @alignCast(@alignOf([*]u8), p1));
+        var p2: [*]u8 = @ptrCast(@alignCast(p1));
         var buf = p2[0..@sizeOf(SigInfo)];
         _ = try os.read(self.id, buf[0..]);
     }

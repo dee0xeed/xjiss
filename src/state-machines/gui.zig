@@ -79,13 +79,16 @@ pub const XjisGui = struct {
         gd.client = null;
         gd.me = me;
 
-        for (gd.eventHandlers) |*h| { h.* = null;}
+        //for (gd.eventHandlers) |*h| { h.* = null;}
+        for (&gd.eventHandlers) |*h| { h.* = null;}
+        //for (gd.eventHandlers) |h| { h = null;}
+        //for (gd.eventHandlers) |&h| { h.* = null;}
         gd.eventHandlers[x11.Expose] = &handleExpose;
         gd.eventHandlers[x11.ClientMessage] = &handleClientMessage;
         gd.eventHandlers[x11.KeyPress] = &handleKeyPress;
         gd.eventHandlers[x11.KeyRelease] = &handleKeyRelease;
 
-        for (gd.funcKeysHandlers) |*h| { h.* = null;}
+        for (&gd.funcKeysHandlers) |*h| { h.* = null;}
         gd.funcKeysHandlers[x11.XK_F1 & 0xFF] = &decreaseVolume;
         gd.funcKeysHandlers[x11.XK_F2 & 0xFF] = &increaseVolume;
         gd.funcKeysHandlers[x11.XK_F3 & 0xFF] = &onF3;
@@ -120,14 +123,15 @@ pub const XjisGui = struct {
 
         gd.display = x11.XOpenDisplay(null).?;
         gd.screen = x11.DefaultScreen(gd.display);
-        const dcm = x11.DefaultColormap(gd.display, @intCast(usize, gd.screen));
+        const gds: usize = @intCast(gd.screen);
+        const dcm = x11.DefaultColormap(gd.display, gds);
         _ = x11.XAllocNamedColor(gd.display, dcm, "SteelBlue", &gd.fg_color, &color);
 
         gd.window = x11.XCreateSimpleWindow(
             gd.display,
-            x11.RootWindow(gd.display, @intCast(usize, gd.screen)), 0, 0,
+            x11.RootWindow(gd.display, gds), 0, 0,
             win_width, win_height, 3,
-            x11.BlackPixel(gd.display, @intCast(usize, gd.screen)), 
+            x11.BlackPixel(gd.display, gds), 
             gd.fg_color.pixel
         );
 
@@ -141,7 +145,8 @@ pub const XjisGui = struct {
         size_hints.max_width = win_width;
         size_hints.max_height = win_height;
 
-        _ = x11.XStringListToTextProperty(@ptrCast([*c][*c]u8, &app_name), 1, &win_name);
+        //_ = x11.XStringListToTextProperty(@ptrCast([*c][*c]u8, &app_name), 1, &win_name);
+        _ = x11.XStringListToTextProperty(@ptrCast(&app_name), 1, &win_name);
 
         wm_hints.initial_state = x11.NormalState;
         wm_hints.input = @as(c_int, 1);
@@ -154,7 +159,8 @@ pub const XjisGui = struct {
         x11.XSetWMProperties (
                 gd.display, gd.window,
                 &win_name, null,
-                @ptrCast([*c][*c]u8, std.os.argv), @intCast(c_int, std.os.argv.len),
+                //@ptrCast([*c][*c]u8, std.os.argv), @intCast(c_int, std.os.argv.len),
+                @ptrCast(std.os.argv), @intCast(std.os.argv.len),
                 size_hints, wm_hints, class_hints
         );
 
@@ -303,12 +309,12 @@ pub const XjisGui = struct {
             return handler(gd.jis);
         }
 
-        const tn = gd.jis.keyToToneNumber(@intCast(u8, ks & 0xFF)) orelse return false;
+        const tn: u8 = gd.jis.keyToToneNumber(@intCast(ks & 0xFF)) orelse return false;
         if (.client == gd.mode) {
-            const cmd = @intCast(u8, tn + 1) | 0x80;
-            gd.me.msgTo(gd.client, M0_SEND, @intToPtr(*anyopaque, cmd));
+            const cmd: u8 = (tn + 1) | 0x80;
+            gd.me.msgTo(gd.client, M0_SEND, @ptrFromInt(cmd));
         }
-        toneOn(gd, tn);
+        toneOn(gd, @intCast(tn));
         return false;
     }
 
@@ -341,10 +347,10 @@ pub const XjisGui = struct {
         if ((ks & 0xFF00) != 0)
             return false;
 
-        const tn = gd.jis.keyToToneNumber(@intCast(u8, ks & 0xFF)) orelse return false;
+        const tn = gd.jis.keyToToneNumber(@intCast(ks & 0xFF)) orelse return false;
         if (.client == gd.mode) {
             const cmd = tn + 1;
-            gd.me.msgTo(gd.client, M0_SEND, @intToPtr(*anyopaque, cmd));
+            gd.me.msgTo(gd.client, M0_SEND, @ptrFromInt(cmd));
         }
         toneOff(gd, tn);
         return false;
@@ -368,17 +374,18 @@ pub const XjisGui = struct {
             _ = x11.XSetForeground(gd.display, gd.gc, gd.unpressed_key_color.pixel);
             _ = x11.XFillRectangle(gd.display, gd.window, gd.gc, x + 2, y + 2, key_width - 2, key_width - 2);
         }
-        _ = x11.XSetForeground(gd.display, gd.gc, x11.BlackPixel(gd.display, @intCast(usize, gd.screen)));
+        const gds: usize = @intCast(gd.screen);
+        _ = x11.XSetForeground(gd.display, gd.gc, x11.BlackPixel(gd.display, gds));
         _ = x11.XDrawString (
                 gd.display, gd.window, gd.gc,
                 x + 5, y + key_width - 5,
-                &ti.name[0], @intCast(c_int, ti.name.len)
+                &ti.name[0], @intCast(ti.name.len)
         );
     }
 
     fn updateScreen(gd: *GuiData) void {
-        for (gd.jis.tones) |_, k| {
-            updateKey(gd, @intCast(u6, k));
+        for (gd.jis.tones, 0..) |_, k| {
+            updateKey(gd, @intCast(k));
         }
     }
 
@@ -405,7 +412,7 @@ pub const XjisGui = struct {
         while (x11.XPending(gd.display) != 0) {
             var xe: x11.XEvent = undefined;
             _ = x11.XNextEvent(gd.display, &xe);
-            const handler = gd.eventHandlers[@intCast(usize, xe.type)] orelse continue;
+            const handler = gd.eventHandlers[@intCast(xe.type)] orelse continue;
             if (handler(&xe, gd))
                 me.msgTo(null,  Message.M0, null);
         }
@@ -424,7 +431,7 @@ pub const XjisGui = struct {
         _ = src;
         const gd = util.opaqPtrTo(me.data, *GuiData);
         const tn = util.opaqPtrTo(dptr, *u8);
-        toneOff(gd, @intCast(u6, tn.*));
+        toneOff(gd, @intCast(tn.*));
     }
 
     // message from some server machine, turn a tone on
@@ -432,6 +439,6 @@ pub const XjisGui = struct {
         _ = src;
         const gd = util.opaqPtrTo(me.data, *GuiData);
         const tn = util.opaqPtrTo(dptr, *u8);
-        toneOn(gd, @intCast(u6, tn.*));
+        toneOn(gd, @intCast(tn.*));
     }
 };

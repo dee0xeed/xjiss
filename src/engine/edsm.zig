@@ -79,7 +79,7 @@ pub const StageMachine = struct {
         sm: *StageMachine = undefined,
 
         pub fn setReflex(self: *Stage, esk: EventSource.Kind, seqn: u4, refl: Reflex) void {
-            const row: u8 = @enumToInt(esk);
+            const row: u8 = @intFromEnum(esk);
             const col: u8 = seqn;
             if (self.reflexes[row][col]) |_| {
                 print("{s}/{s} already has relfex for '{c}{}'\n", .{self.sm.name, self.name, esk_tags[row], seqn});
@@ -135,7 +135,7 @@ pub const StageMachine = struct {
 
     /// state machine engine
     pub fn reactTo(self: *Self, msg: Message) void {
-        const row = @enumToInt(msg.esk);
+        const row: u8 = @intFromEnum(msg.esk);
         const col = msg.sqn;
         const current_stage = self.current_stage;
 

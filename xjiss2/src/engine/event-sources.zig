@@ -37,10 +37,10 @@ pub const EventSource = struct {
         return try es.getMessageCodeImpl(es, event_mask);
     }
 
+    // "final methods"
     pub fn enable(es: *EventSource) !void {
         try es.eq.enableCanRead(es);
     }
-
     pub fn disable(es: *EventSource) !void {
         try es.eq.disableEventSource(es);
     }

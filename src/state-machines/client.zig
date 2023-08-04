@@ -112,8 +112,8 @@ pub const Worker = struct {
     fn workM0(me: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
         _ = src;
         var wd = util.opaqPtrTo(me.data, *WorkerData);
-        const cmd = @ptrToInt(dptr) - 1;
-        wd.buf[wd.cnt] = @intCast(u8, cmd);
+        const cmd: u8 = @intCast(@intFromPtr(dptr) - 1);
+        wd.buf[wd.cnt] = cmd;
         wd.cnt += 1;
         wd.io.enableOut(&me.md.eq) catch unreachable;
     }

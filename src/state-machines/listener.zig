@@ -81,7 +81,7 @@ pub const Listener = struct {
         io.enable(&me.md.eq, .{}) catch unreachable;
         const fd = io.acceptClient() catch unreachable;
         var ptr = me.allocator.create(Client) catch unreachable;
-        var client = @ptrCast(*Client, @alignCast(@alignOf(*Client), ptr));
+        var client: *Client = @ptrCast(@alignCast(ptr));
         client.fd = fd;
 
         var sm = pd.wpool.get();
