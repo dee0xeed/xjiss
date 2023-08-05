@@ -43,7 +43,7 @@ It was written as
 ```
 1     2    3    4    5     6    7    8     9    0    -    =    \
 D+    R-   Mb   M+   F+    Lb   Sb   d+    r-   mb   m+   f+   do
-36:17 20:9 12:5 18:7 45:16 16:5 18/5 72:17 40:9 24:5 36:7 45:8 8:1
+36:17 20:9 12:5 18:7 45:16 16:5 18:5 72:17 40:9 24:5 36:7 45:8 8:1
 
 q     w    e    r    t     y    u    i     o    p    [    ]
 Do    Re   Mi   Fa   So    La   Si   do    re   mi   fa   so
