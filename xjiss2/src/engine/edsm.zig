@@ -30,7 +30,6 @@ pub const StageMachine = struct {
 //        const enterFnPtr = *const fn(sm: *StageMachine) void;
         const reactFnPtr = *const fn(*StageMachine, ?*StageMachine, ?*anyopaque) void;
         const enterFnPtr = *const fn(*StageMachine) void;
-
         const leaveFnPtr = enterFnPtr;
 
 //        const ReflexKind = enum {

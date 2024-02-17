@@ -212,7 +212,7 @@ pub const FileSystem = struct {
 
     // a little bit tricky function that reads
     // exactly *one* event from inotify system
-    // regardless of weither it has file name or not
+    // regardless of whether it has file name or not
     fn readInfo(es: *EventSource, event_mask: u32) !u8 {
         _ = event_mask;
         var self = @fieldParentPtr(FileSystem, "es", es);
