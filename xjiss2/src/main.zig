@@ -30,7 +30,7 @@ pub fn main() !void {
         return;
     }
 
-    var allocator = std.heap.c_allocator;
+    const allocator = std.heap.c_allocator;
 
     var mq = mque.MessageQueue{};
     var eq = try eque.EventQueue.init(&mq);

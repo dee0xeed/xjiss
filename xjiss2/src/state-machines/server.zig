@@ -69,28 +69,32 @@ pub const Worker = struct {
     }
 
     fn initEnter(sm: *StageMachine) void {
-        var me = @fieldParentPtr(Worker, "sm", sm);
+        //var me = @fieldParentPtr(Worker, "sm", sm);
+        var me: *Worker = @fieldParentPtr("sm", sm);
         me.wd.sk = InOut.init(&me.sm, -1);
         sm.msgTo(sm, M0_IDLE, null);
     }
 
     fn idleEnter(sm: *StageMachine) void {
-        var me = @fieldParentPtr(Worker, "sm", sm);
+        //var me = @fieldParentPtr(Worker, "sm", sm);
+        var me: *Worker = @fieldParentPtr("sm", sm);
         me.wd.listener = undefined;
         me.wd.client = undefined;
         me.wd.pool.put(&me.sm) catch unreachable;
     }
 
     fn idleM1(sm: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
-        var me = @fieldParentPtr(Worker, "sm", sm);
-        var client = util.opaqPtrTo(dptr, *Client);
+        //var me = @fieldParentPtr(Worker, "sm", sm);
+        var me: *Worker = @fieldParentPtr("sm", sm);
+        const client = util.opaqPtrTo(dptr, *Client);
         me.wd.listener = src.?;
         me.wd.client = client;
         sm.msgTo(sm, M0_RECV, null);
     }
 
     fn recvEnter(sm: *StageMachine) void {
-        var me = @fieldParentPtr(Worker, "sm", sm);
+        //var me = @fieldParentPtr(Worker, "sm", sm);
+        var me: *Worker = @fieldParentPtr("sm", sm);
         me.wd.sk.es.id = me.wd.client.fd;
         me.wd.sk.es.enable() catch unreachable;
     }
@@ -98,7 +102,8 @@ pub const Worker = struct {
     fn recvD0(sm: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
         _ = src;
         _ = dptr;
-        var me = @fieldParentPtr(Worker, "sm", sm);
+        //var me = @fieldParentPtr(Worker, "sm", sm);
+        var me: *Worker = @fieldParentPtr("sm", sm);
         const ba = me.wd.sk.bytes_avail;
         if (0 == ba) {
             sm.msgTo(sm, M0_IDLE, null);
@@ -106,7 +111,7 @@ pub const Worker = struct {
             return;
         }
         var cmd: [1]u8 = undefined;
-        _ = os.read(me.wd.sk.es.id, cmd[0..]) catch {
+        _ = std.posix.read(me.wd.sk.es.id, cmd[0..]) catch {
             sm.msgTo(sm, M0_IDLE, null);
             sm.msgTo(me.wd.listener, M0_GONE, me.wd.client);
             return;
@@ -125,7 +130,8 @@ pub const Worker = struct {
     fn recvD2(sm: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
         _ = src;
         _ = dptr;
-        var me = @fieldParentPtr(Worker, "sm", sm);
+        //var me = @fieldParentPtr(Worker, "sm", sm);
+        const me: *Worker = @fieldParentPtr("sm", sm);
         sm.msgTo(sm, M0_IDLE, null);
         sm.msgTo(me.wd.listener, M0_GONE, me.wd.client);
     }

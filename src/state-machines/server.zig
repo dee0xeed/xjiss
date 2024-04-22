@@ -81,7 +81,7 @@ pub const Worker = struct {
 
     fn idleM1(me: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
         var wd = util.opaqPtrTo(me.data, *WorkerData);
-        var client = util.opaqPtrTo(dptr, *Client);
+        const client = util.opaqPtrTo(dptr, *Client);
         wd.listener = src.?;
         wd.client = client;
         me.msgTo(me, M0_RECV, null);
@@ -104,7 +104,7 @@ pub const Worker = struct {
             return;
         }
         var cmd: [1]u8 = undefined;
-        _ = os.read(io.id, cmd[0..]) catch {
+        _ = std.posix.read(io.id, cmd[0..]) catch {
             me.msgTo(me, M0_IDLE, null);
             me.msgTo(wd.listener, M0_GONE, wd.client);
             return;
@@ -123,7 +123,7 @@ pub const Worker = struct {
     fn recvD2(me: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
         _ = src;
         _ = dptr;
-        var wd = util.opaqPtrTo(me.data, *WorkerData);
+        const wd = util.opaqPtrTo(me.data, *WorkerData);
         me.msgTo(me, M0_IDLE, null);
         me.msgTo(wd.listener, M0_GONE, wd.client);
     }

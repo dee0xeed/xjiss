@@ -22,6 +22,7 @@ const alsa = @cImport({
     @cInclude("sys/poll.h");
     @cInclude("stdio.h");
 });
+
 const pcmOpen = alsa.snd_pcm_open;
 const pcmSetParams = alsa.snd_pcm_set_params;
 const pcmDump = alsa.snd_pcm_dump;
@@ -72,7 +73,7 @@ pub const XjisSound = struct {
 
         me.data = me.allocator.create(SoundData) catch unreachable;
         var sd = util.opaqPtrTo(me.data, *SoundData);
-        sd.device = os.getenv("XJIS_PLAYBACK_DEVICE") orelse default_device;
+        sd.device = std.posix.getenv("XJIS_PLAYBACK_DEVICE") orelse default_device;
         sd.jis = jis;
         return me;
     }
@@ -161,7 +162,7 @@ pub const XjisSound = struct {
         var sd = util.opaqPtrTo(me.data, *SoundData);
         var io = util.opaqPtrTo(dptr, *EventSource);
 
-        var ret = pcmWrite(sd.handle, sd.snd_buf.ptr, sd.nframes);
+        const ret = pcmWrite(sd.handle, sd.snd_buf.ptr, sd.nframes);
         if (ret < 0) {
             print("pcmWrite(): {s}\n", .{alsaStrErr(@intCast(ret))});
             me.msgTo(me, M0_FAIL, null);
@@ -184,7 +185,7 @@ pub const XjisSound = struct {
 
     fn failEnter(me: *StageMachine) void {
         print("An error occured, recovering...\n", .{});
-        var sd = util.opaqPtrTo(me.data, *SoundData);
+        const sd = util.opaqPtrTo(me.data, *SoundData);
         _ = pcmClose(sd.handle);
         initAlsa(sd);
         me.msgTo(me, M0_WORK, null);

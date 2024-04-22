@@ -60,8 +60,8 @@ pub const Listener = struct {
 
     fn initEnter(me: *StageMachine) void {
         var pd = util.opaqPtrTo(me.data, *ListenerData);
-        me.initSignal(&pd.sg0, os.SIG.INT, Message.S0) catch unreachable;
-        me.initSignal(&pd.sg1, os.SIG.TERM, Message.S1) catch unreachable;
+        me.initSignal(&pd.sg0, std.posix.SIG.INT, Message.S0) catch unreachable;
+        me.initSignal(&pd.sg1, std.posix.SIG.TERM, Message.S1) catch unreachable;
         me.initListener(&pd.io0, pd.port) catch unreachable;
         me.msgTo(me, M0_WORK, null);
     }
@@ -80,11 +80,11 @@ pub const Listener = struct {
         var io = util.opaqPtrTo(dptr, *EventSource);
         io.enable(&me.md.eq, .{}) catch unreachable;
         const fd = io.acceptClient() catch unreachable;
-        var ptr = me.allocator.create(Client) catch unreachable;
+        const ptr = me.allocator.create(Client) catch unreachable;
         var client: *Client = @ptrCast(@alignCast(ptr));
         client.fd = fd;
 
-        var sm = pd.wpool.get();
+        const sm = pd.wpool.get();
         if (sm) |worker| {
             me.msgTo(worker, M1_MEET, client);
         } else {
@@ -96,15 +96,15 @@ pub const Listener = struct {
     // or from self (if no workers were available)
     fn workM0(me: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
         _ = src;
-        var client = util.opaqPtrTo(dptr, *Client);
-        os.close(client.fd);
+        const client = util.opaqPtrTo(dptr, *Client);
+        std.posix.close(client.fd);
         me.allocator.destroy(client);
     }
 
     fn workS0(me: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
         _ = src;
-        var sg = util.opaqPtrTo(dptr, *EventSource);
-        var si = sg.info.sg.sig_info;
+        const sg = util.opaqPtrTo(dptr, *EventSource);
+        const si = sg.info.sg.sig_info;
         print("got signal #{} from PID {}\n", .{si.signo, si.pid});
         me.msgTo(null, Message.M0, null);
     }

@@ -4,9 +4,9 @@ const os = std.os;
 const print = std.debug.print;
 const EpollEvent = os.linux.epoll_event;
 const EpollData = os.linux.epoll_data;
-const epollCreate = os.epoll_create1;
-const epollCtl = os.epoll_ctl;
-const epollWait = os.epoll_wait;
+const epollCreate = std.posix.epoll_create1;
+const epollCtl = std.posix.epoll_ctl;
+const epollWait = std.posix.epoll_wait;
 const EPOLL = os.linux.EPOLL;
 const ioctl = os.linux.ioctl;
 
@@ -36,7 +36,7 @@ pub const EventQueue = struct {
     }
 
     pub fn fini(self: *EventQueue) void {
-        os.close(self.fd);
+        std.posix.close(self.fd);
     }
 
     fn getIoEventInfo(es: *EventSource, events: u32) !u4 {
@@ -102,7 +102,7 @@ pub const EventQueue = struct {
 
     fn enableEventSource(self: *EventQueue, es: *EventSource, ek: EventKind) !void {
 
-        const FdAlreadyInSet = os.EpollCtlError.FileDescriptorAlreadyPresentInSet;
+        const FdAlreadyInSet = std.posix.EpollCtlError.FileDescriptorAlreadyPresentInSet;
         var em: u32 = if (.can_read == ek) (EPOLL.IN | EPOLL.RDHUP) else EPOLL.OUT;
         em |= EPOLL.ONESHOT;
 

@@ -406,7 +406,7 @@ pub const XjisGui = struct {
 
     fn workD0(me: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
         _ = src;
-        var gd = util.opaqPtrTo(me.data, *GuiData);
+        const gd = util.opaqPtrTo(me.data, *GuiData);
         var io = util.opaqPtrTo(dptr, *EventSource);
 
         while (x11.XPending(gd.display) != 0) {

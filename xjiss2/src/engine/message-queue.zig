@@ -29,7 +29,7 @@ pub fn RingBuffer(comptime T: type, comptime capacity: u16) type {
 
         pub fn get(self: *Self) ?T {
             if (0 == self.n_items) return null;
-            var item = self.storage[self.r_index];
+            const item = self.storage[self.r_index];
             self.n_items -= 1;
             self.r_index += 1;
             self.r_index &= self.index_mask;

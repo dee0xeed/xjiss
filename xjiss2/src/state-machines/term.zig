@@ -43,22 +43,25 @@ pub const Term = struct {
     }
 
     fn initEnter(sm: *StageMachine) void {
-        var me = @fieldParentPtr(Term, "sm", sm);
-        me.pd.sg0 = Signal.init(&me.sm, os.SIG.INT, Message.S0) catch unreachable;
-        me.pd.sg1 = Signal.init(&me.sm, os.SIG.TERM, Message.S1) catch unreachable;
+        //var me = @fieldParentPtr(Term, "sm", sm);
+        var me: *Term = @fieldParentPtr("sm", sm);
+        me.pd.sg0 = Signal.init(&me.sm, std.posix.SIG.INT, Message.S0) catch unreachable;
+        me.pd.sg1 = Signal.init(&me.sm, std.posix.SIG.TERM, Message.S1) catch unreachable;
         sm.msgTo(sm, M0_WORK, null);
     }
 
     fn workEnter(sm: *StageMachine) void {
-        var me = @fieldParentPtr(Term, "sm", sm);
+        //var me = @fieldParentPtr(Term, "sm", sm);
+        var me: *Term = @fieldParentPtr("sm", sm);
         me.pd.sg0.es.enable() catch unreachable;
         me.pd.sg1.es.enable() catch unreachable;
     }
 
     fn workS0(sm: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
         _ = src;
-        var es = util.opaqPtrTo(dptr, *EventSource);
-        var sg = @fieldParentPtr(Signal, "es", es);
+        const es = util.opaqPtrTo(dptr, *EventSource);
+        //var sg = @fieldParentPtr(Signal, "es", es);
+        const sg: *Signal = @fieldParentPtr("es", es);
         print("got signal #{} from PID {}\n", .{sg.info.signo, sg.info.pid});
         sm.msgTo(null, Message.M0, null);
     }

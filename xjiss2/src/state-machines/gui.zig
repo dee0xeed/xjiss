@@ -385,23 +385,26 @@ pub const XjisGui = struct {
     }
 
     fn initEnter(sm: *StageMachine) void {
-        var me = @fieldParentPtr(XjisGui, "sm", sm);
+        //var me = @fieldParentPtr(XjisGui, "sm", sm);
+        var me: *XjisGui = @fieldParentPtr("sm", sm);
         initX11(&me.gd) catch unreachable;
         updateScreen(&me.gd);
         _ = x11.XFlush(me.gd.display);
-        var id = x11.ConnectionNumber(me.gd.display);
+        const id = x11.ConnectionNumber(me.gd.display);
         me.gd.io = InOut.init(&me.sm, id);
         sm.msgTo(sm, M0_WORK, null);
     }
 
     fn workEnter(sm: *StageMachine) void {
-        var me = @fieldParentPtr(XjisGui, "sm", sm);
+        //var me = @fieldParentPtr(XjisGui, "sm", sm);
+        var me: *XjisGui = @fieldParentPtr("sm", sm);
         me.gd.io.es.enable() catch unreachable;
     }
 
     fn workD0(sm: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
         _ = src;
-        var me = @fieldParentPtr(XjisGui, "sm", sm);
+        //var me = @fieldParentPtr(XjisGui, "sm", sm);
+        var me: *XjisGui = @fieldParentPtr("sm", sm);
         var io = util.opaqPtrTo(dptr, *EventSource);
 
         while (x11.XPending(me.gd.display) != 0) {
@@ -409,7 +412,7 @@ pub const XjisGui = struct {
             _ = x11.XNextEvent(me.gd.display, &xe);
             const handler = me.gd.eventHandlers[@intCast(xe.type)] orelse continue;
             if (handler(&xe, &me.gd))
-                os.raise(os.SIG.TERM) catch unreachable;
+                std.posix.raise(std.posix.SIG.TERM) catch unreachable;
         }
         io.enable() catch unreachable;
     }
@@ -419,13 +422,14 @@ pub const XjisGui = struct {
         _ = src;
         _ = dptr;
         print("connection to X-server lost\n", .{});
-        os.raise(os.SIG.TERM) catch unreachable;
+        std.posix.raise(std.posix.SIG.TERM) catch unreachable;
     }
 
     // message from some server machine, turn a tone off
     fn workM0(sm: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
         _ = src;
-        var me = @fieldParentPtr(XjisGui, "sm", sm);
+        //var me = @fieldParentPtr(XjisGui, "sm", sm);
+        var me: *XjisGui = @fieldParentPtr("sm", sm);
         const tn = util.opaqPtrTo(dptr, *u8);
         toneOff(&me.gd, @intCast(tn.*));
     }
@@ -433,7 +437,8 @@ pub const XjisGui = struct {
     // message from some server machine, turn a tone on
     fn workM1(sm: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
         _ = src;
-        var me = @fieldParentPtr(XjisGui, "sm", sm);
+        //var me = @fieldParentPtr(XjisGui, "sm", sm);
+        var me: *XjisGui = @fieldParentPtr("sm", sm);
         const tn = util.opaqPtrTo(dptr, *u8);
         toneOn(&me.gd, @intCast(tn.*));
     }

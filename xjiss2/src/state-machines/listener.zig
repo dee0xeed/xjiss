@@ -62,38 +62,42 @@ pub const Listener = struct {
     }
 
     fn initEnter(sm: *StageMachine) void {
-        var me = @fieldParentPtr(Listener, "sm", sm);
+        //var me = @fieldParentPtr(Listener, "sm", sm);
+        var me: *Listener = @fieldParentPtr("sm", sm);
         me.pd.lsk = ServerSocket.init(&me.sm, me.pd.port, me.pd.backlog) catch unreachable;
         sm.msgTo(sm, M0_WORK, null);
     }
 
     fn workEnter(sm: *StageMachine) void {
-        var me = @fieldParentPtr(Listener, "sm", sm);
+        //var me = @fieldParentPtr(Listener, "sm", sm);
+        var me: *Listener = @fieldParentPtr("sm", sm);
         me.pd.lsk.es.enable() catch unreachable;
     }
 
     // Q: is this ever possible?
     fn workD2(sm: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
-        var me = @fieldParentPtr(Listener, "sm", sm);
+        //var me = @fieldParentPtr(Listener, "sm", sm);
+        const me: *Listener = @fieldParentPtr("sm", sm);
         _ = src;
         _ = dptr;
         print("OOPS, error on listening socket (fd={}) happened\n", .{me.pd.lsk.es.id});
-        os.raise(os.SIG.TERM) catch unreachable;
+        std.posix.raise(std.posix.SIG.TERM) catch unreachable;
     }
 
     // incoming connection
     fn workD3(sm: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
         _ = src;
         _ = dptr;
-        var me = @fieldParentPtr(Listener, "sm", sm);
+        //var me = @fieldParentPtr(Listener, "sm", sm);
+        var me: *Listener = @fieldParentPtr("sm", sm);
         me.pd.lsk.es.enable() catch unreachable;
-        var peer = sm.allocator.create(ServerSocket.Client) catch unreachable;
+        const peer = sm.allocator.create(ServerSocket.Client) catch unreachable;
         peer.* = me.pd.lsk.acceptClient() orelse {
             sm.allocator.destroy(peer);
             return;
         };
         print("client from {}\n", .{peer.addr});
-        var wsm = me.pd.wpool.get();
+        const wsm = me.pd.wpool.get();
         if (wsm) |worker| {
             sm.msgTo(worker, M1_MEET, peer);
         } else {
@@ -105,8 +109,8 @@ pub const Listener = struct {
     // or from self (if no workers were available)
     fn workM0(sm: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
         _ = src;
-        var peer = util.opaqPtrTo(dptr, *ServerSocket.Client);
-        os.close(peer.fd);
+        const peer = util.opaqPtrTo(dptr, *ServerSocket.Client);
+        std.posix.close(peer.fd);
         print("client from {} gone\n", .{peer.addr});
         sm.allocator.destroy(peer);
     }

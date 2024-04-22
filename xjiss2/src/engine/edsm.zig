@@ -26,18 +26,10 @@ pub const StageMachine = struct {
 
     pub const Stage = struct {
 
-//        const reactFnPtr = *const fn(sm: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void;
-//        const enterFnPtr = *const fn(sm: *StageMachine) void;
         const reactFnPtr = *const fn(*StageMachine, ?*StageMachine, ?*anyopaque) void;
         const enterFnPtr = *const fn(*StageMachine) void;
         const leaveFnPtr = enterFnPtr;
 
-//        const ReflexKind = enum {
-//            do_this,
-//            jump_to,
-//        };
-
-//        pub const Reflex = union(ReflexKind) {
         pub const Reflex = union(enum) {
             do_this: reactFnPtr,
             jump_to: *Stage,
@@ -94,7 +86,7 @@ pub const StageMachine = struct {
     }
 
     pub fn onHeap(a: Allocator, md: *MessageDispatcher, name: []const u8, numb: u16, nstages: u4) !*StageMachine {
-        var sm = try a.create(StageMachine);
+        const sm = try a.create(StageMachine);
         sm.* = try init(a, md, name, numb, nstages);
         return sm;
     }

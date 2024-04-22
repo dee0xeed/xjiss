@@ -26,7 +26,7 @@ pub fn main() !void {
         return;
     }
 
-    var allocator = std.heap.c_allocator;
+    const allocator = std.heap.c_allocator;
     var md = try MessageDispatcher.onStack(allocator, 5);
     var jis = Jis.init();
     var gui = try Gui.onHeap(allocator, &md, &jis);

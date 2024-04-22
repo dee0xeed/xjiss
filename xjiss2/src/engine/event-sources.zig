@@ -5,15 +5,14 @@ const mem = std.mem;
 const net = std.net;
 const print = std.debug.print;
 
-const timerFd = os.timerfd_create;
-const timerFdSetTime = os.timerfd_settime;
+const timerFd = std.posix.timerfd_create;
+const timerFdSetTime = os.linux.timerfd_settime;
 const TimeSpec = os.linux.timespec;
 const ITimerSpec = os.linux.itimerspec;
 
-const signalFd = os.signalfd;
-//const sigProcMask = os.sigprocmask;
-const SigSet = os.sigset_t;
-const SIG = os.SIG;
+const signalFd = std.posix.signalfd;
+const SigSet = std.posix.sigset_t;
+const SIG = std.posix.SIG;
 const SigInfo = os.linux.signalfd_siginfo;
 
 const fsysFd = os.inotify_init1;
@@ -52,9 +51,8 @@ pub const Signal = struct {
     info: SigInfo = undefined,
 
     fn getId(signo: u6) !i32 {
-        var sset: SigSet = os.empty_sigset;
+        var sset: SigSet = std.posix.empty_sigset;
         os.linux.sigaddset(&sset, signo);
-        //sigProcMask(@intCast(c_int, SIG.BLOCK), &sset, null);
         _ = os.linux.sigprocmask(SIG.BLOCK, &sset, null);
         return signalFd(-1, &sset, 0);
     }
@@ -74,10 +72,10 @@ pub const Signal = struct {
     fn readInfo(es: *EventSource, event_mask: u32) !u8 {
         // check event mask here...
         _ = event_mask;
-        var self = @fieldParentPtr(Signal, "es", es);
-        var p1 = &self.info;
+        var self: *Signal = @fieldParentPtr("es", es);
+        const p1 = &self.info;
         var p2: [*]u8 = @ptrCast(@alignCast(p1));
-        _ = try os.read(es.id, p2[0..@sizeOf(SigInfo)]);
+        _ = try std.posix.read(es.id, p2[0..@sizeOf(SigInfo)]);
         return self.code;
     }
 };
@@ -90,7 +88,7 @@ pub const Timer = struct {
     pub fn init(sm: *StageMachine, code: u8) !Timer {
         return Timer {
             .es = .{
-                .id = try timerFd(os.CLOCK.REALTIME, 0),
+                .id = try timerFd(std.posix.CLOCK.REALTIME, .{}),
                 .owner = sm,
                 .getMessageCodeImpl = &readInfo,
                 .eq = sm.md.eq,
@@ -110,7 +108,8 @@ pub const Timer = struct {
                 .tv_nsec = (msec % 1000) * 1000 * 1000,
             },
         };
-        try timerFdSetTime(fd, 0, &its, null);
+        const tid: os.linux.TFD.TIMER = .{};
+        _ = timerFdSetTime(fd, tid, &its, null);
     }
 
     pub fn start(tm: *Timer, msec: u32) !void {
@@ -123,11 +122,11 @@ pub const Timer = struct {
 
     pub fn readInfo(es: *EventSource, event_mask: u32) !u8 {
         _ = event_mask;
-        var self = @fieldParentPtr(Timer, "es", es);
-        var p1 = &self.nexp;
+        var self: *Timer = @fieldParentPtr("es", es);
+        const p1 = &self.nexp;
         var p2: [*]u8 = @ptrCast(@alignCast(p1));
         var buf = p2[0..@sizeOf(u64)];
-        _ = try os.read(es.id, buf[0..]);
+        _ = try std.posix.read(es.id, buf[0..]);
         return self.code;
     }
 };
@@ -143,14 +142,14 @@ pub const ServerSocket = struct {
     };
 
     fn getId(port: u16, backlog: u31) !i32 {
-        var fd = try os.socket(os.AF.INET, os.SOCK.STREAM, os.IPPROTO.TCP);
-        errdefer os.close(fd);
+        const fd = try std.posix.socket(std.posix.AF.INET, std.posix.SOCK.STREAM, std.posix.IPPROTO.TCP);
+        errdefer std.posix.close(fd);
         const yes = mem.toBytes(@as(c_int, 1));
-        try os.setsockopt(fd, os.SOL.SOCKET, os.SO.REUSEADDR, &yes);
+        try std.posix.setsockopt(fd, std.posix.SOL.SOCKET, std.posix.SO.REUSEADDR, &yes);
         const addr = net.Address.initIp4(.{0,0,0,0}, port);
-        var socklen = addr.getOsSockLen();
-        try os.bind(fd, &addr.any, socklen);
-        try os.listen(fd, backlog);
+        const socklen = addr.getOsSockLen();
+        try std.posix.bind(fd, &addr.any, socklen);
+        try std.posix.listen(fd, backlog);
         return fd;
     }
 
@@ -168,7 +167,6 @@ pub const ServerSocket = struct {
 
     fn getMessageCode(es: *EventSource, events: u32) !u8 {
         const EPOLL = os.linux.EPOLL;
-        // var self = @fieldParentPtr(ServerSocket, "es", es);
         _ = es;
         if (0 != events & (EPOLL.ERR | EPOLL.HUP | EPOLL.RDHUP))
             // Q: is this ever possible?
@@ -178,8 +176,8 @@ pub const ServerSocket = struct {
 
     pub fn acceptClient(self: *ServerSocket) ?Client {
         var addr: net.Address = undefined;
-        var alen: os.socklen_t = @sizeOf(net.Address);
-        const fd  = os.accept(self.es.id, &addr.any, &alen, 0) catch |err| {
+        var alen: std.posix.socklen_t = @sizeOf(net.Address);
+        const fd  = std.posix.accept(self.es.id, &addr.any, &alen, 0) catch |err| {
             print("OOPS, accept() failed: {}\n", .{err});
             return null;
         };
@@ -189,7 +187,6 @@ pub const ServerSocket = struct {
 
 pub const FileSystem = struct {
     es: EventSource,
-    // const buf_len = 1024;
     buf: [1024]u8 = undefined,
     event: *FsysEvent = undefined, // points to .buf[0]
     fname: []u8 = undefined, // points to .buf[@sizeOf(FsysEvent)]
@@ -215,7 +212,7 @@ pub const FileSystem = struct {
     // regardless of whether it has file name or not
     fn readInfo(es: *EventSource, event_mask: u32) !u8 {
         _ = event_mask;
-        var self = @fieldParentPtr(FileSystem, "es", es);
+        var self: *FileSystem = @fieldParentPtr("es", es);
         mem.set(u8, self.buf[0..], 0);
         var len: usize = @sizeOf(FsysEvent);
         while (true) {
@@ -233,7 +230,7 @@ pub const FileSystem = struct {
     }
 
     pub fn addWatch(self: *FileSystem, path: []const u8, mask: u32) !void {
-        var wd = try fsysAddWatch(self.es.id, path, mask);
+        const wd = try fsysAddWatch(self.es.id, path, mask);
         _ = wd;
     }
 };
@@ -257,7 +254,7 @@ pub const InOut = struct {
 
         const EPOLL = os.linux.EPOLL;
         const FIONREAD = os.linux.T.FIONREAD;
-        var self = @fieldParentPtr(InOut, "es", es);
+        var self: *InOut = @fieldParentPtr("es", es);
 
         if (0 != events & (EPOLL.ERR | EPOLL.HUP | EPOLL.RDHUP)) {
             return Message.D2;
@@ -291,7 +288,7 @@ pub const ClientSocket = struct {
     addr: net.Address,
 
     pub fn init(sm: *StageMachine, host: []const u8, port: u16) !ClientSocket {
-        var id = try os.socket(os.AF.INET, os.SOCK.STREAM, os.IPPROTO.TCP);
+        const id = try std.posix.socket(std.posix.AF.INET, std.posix.SOCK.STREAM, std.posix.IPPROTO.TCP);
         return ClientSocket {
             .io = InOut.init(sm, id),
             .host = host,
@@ -302,13 +299,13 @@ pub const ClientSocket = struct {
 
     pub fn startConnect(self: *ClientSocket) !void {
 
-        const InProgress = os.ConnectError.WouldBlock;
+        const InProgress = std.posix.ConnectError.WouldBlock;
 
-        var flags = os.fcntl(self.io.es.id, os.F.GETFL, 0) catch unreachable;
-        flags |= os.O.NONBLOCK;
-        _ = os.fcntl(self.io.es.id, os.F.SETFL, flags) catch unreachable;
+        var flags = std.posix.fcntl(self.io.es.id, std.posix.F.GETFL, 0) catch unreachable;
+        flags |= std.posix.SOCK.NONBLOCK;
+        _ = std.posix.fcntl(self.io.es.id, std.posix.F.SETFL, flags) catch unreachable;
 
-        os.connect(self.io.es.id, &self.addr.any, self.addr.getOsSockLen()) catch |err| {
+        std.posix.connect(self.io.es.id, &self.addr.any, self.addr.getOsSockLen()) catch |err| {
             switch (err) {
                 InProgress => return,
                 else => return err,
@@ -318,8 +315,8 @@ pub const ClientSocket = struct {
 
     pub fn update(self: *ClientSocket) !void {
         if (self.io.es.id != -1) {
-            os.close(self.io.es.id);
-            self.io.es.id = try os.socket(os.AF.INET, os.SOCK.STREAM, os.IPPROTO.TCP);
+            std.posix.close(self.io.es.id);
+            self.io.es.id = try std.posix.socket(std.posix.AF.INET, std.posix.SOCK.STREAM, std.posix.IPPROTO.TCP);
         } else unreachable;
     }
 };

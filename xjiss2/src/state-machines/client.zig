@@ -73,14 +73,16 @@ pub const Worker = struct {
     }
 
     fn initEnter(sm: *StageMachine) void {
-        var me = @fieldParentPtr(Worker, "sm", sm);
+        //var me = @fieldParentPtr(Worker, "sm", sm);
+        var me: *Worker = @fieldParentPtr("sm", sm);
         me.wd.sk = ClientSocket.init(&me.sm, me.wd.host, me.wd.port) catch unreachable;
         me.wd.tm = Timer.init(&me.sm, Message.T0) catch unreachable;
         sm.msgTo(sm, M0_CONN, null);
     }
 
     fn connEnter(sm: *StageMachine) void {
-        var me = @fieldParentPtr(Worker, "sm", sm);
+        // var me = @fieldParentPtr(Worker, "sm", sm);
+        var me: *Worker = @fieldParentPtr("sm", sm);
         me.wd.sk.startConnect() catch unreachable;
         me.wd.sk.io.enableOut() catch unreachable;
     }
@@ -88,7 +90,8 @@ pub const Worker = struct {
     fn connD1(sm: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
         _ = src;
         _ = dptr;
-        var me = @fieldParentPtr(Worker, "sm", sm);
+        //var me = @fieldParentPtr(Worker, "sm", sm);
+        const me: *Worker = @fieldParentPtr("sm", sm);
         print("connected to '{s}:{}'\n", .{me.wd.host, me.wd.port});
         sm.msgTo(sm, M0_WORK, null);
     }
@@ -96,8 +99,9 @@ pub const Worker = struct {
     fn connD2(sm: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
         _ = src;
         _ = dptr;
-        var me = @fieldParentPtr(Worker, "sm", sm);
-        os.getsockoptError(me.wd.sk.io.es.id) catch |err| {
+        //var me = @fieldParentPtr(Worker, "sm", sm);
+        const me: *Worker = @fieldParentPtr("sm", sm);
+        std.posix.getsockoptError(me.wd.sk.io.es.id) catch |err| {
             print("can not connect to '{s}:{}': {}\n", .{me.wd.host, me.wd.port, err});
         };
         sm.msgTo(sm, M1_WAIT, null);
@@ -106,7 +110,8 @@ pub const Worker = struct {
     // message from GUI machine
     fn workM0(sm: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
         _ = src;
-        var me = @fieldParentPtr(Worker, "sm", sm);
+        //var me = @fieldParentPtr(Worker, "sm", sm);
+        var me: *Worker = @fieldParentPtr("sm", sm);
         const cmd: u8 = @intCast(@intFromPtr(dptr) - 1);
         me.wd.buf[me.wd.cnt] = cmd;
         me.wd.cnt += 1;
@@ -115,12 +120,13 @@ pub const Worker = struct {
 
     fn workD1(sm: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
         _ = src;
-        var me = @fieldParentPtr(Worker, "sm", sm);
-        var io = util.opaqPtrTo(dptr, *EventSource);
+        //var me = @fieldParentPtr(Worker, "sm", sm);
+        var me: *Worker = @fieldParentPtr("sm", sm);
+        const io = util.opaqPtrTo(dptr, *EventSource);
 
         var i: usize = 0;
         while (me.wd.cnt > 0) {
-            _ = os.write(io.id, me.wd.buf[i..i+1]) catch {
+            _ = std.posix.write(io.id, me.wd.buf[i..i+1]) catch {
                 sm.msgTo(sm, M1_WAIT, null);
                 return;
             };
@@ -137,13 +143,15 @@ pub const Worker = struct {
     }
 
     fn waitEnter(sm: *StageMachine) void {
-        var me = @fieldParentPtr(Worker, "sm", sm);
+        //var me = @fieldParentPtr(Worker, "sm", sm);
+        var me: *Worker = @fieldParentPtr("sm", sm);
         me.wd.tm.es.enable() catch unreachable;
         me.wd.tm.start(2000) catch unreachable;
     }
 
     fn waitLeave(sm: *StageMachine) void {
-        var me = @fieldParentPtr(Worker, "sm", sm);
+        //var me = @fieldParentPtr(Worker, "sm", sm);
+        var me: *Worker = @fieldParentPtr("sm", sm);
         // see https://github.com/ziglang/zig/issues/13677
         me.wd.sk.update() catch unreachable;
     }

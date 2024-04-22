@@ -93,7 +93,7 @@ pub const Worker = struct {
     fn connD1(me: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
         _ = src;
         _ = dptr;
-        var wd = util.opaqPtrTo(me.data, *WorkerData);
+        const wd = util.opaqPtrTo(me.data, *WorkerData);
         print("connected to '{s}:{}'\n", .{wd.host, wd.port});
         me.msgTo(me, M0_WORK, null);
     }
@@ -101,8 +101,8 @@ pub const Worker = struct {
     fn connD2(me: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
         _ = src;
         _ = dptr;
-        var wd = util.opaqPtrTo(me.data, *WorkerData);
-        os.getsockoptError(wd.io.id) catch |err| {
+        const wd = util.opaqPtrTo(me.data, *WorkerData);
+        std.posix.getsockoptError(wd.io.id) catch |err| {
             print("can not connect to '{s}:{}': {}\n", .{wd.host, wd.port, err});
         };
         me.msgTo(me, M1_WAIT, null);
@@ -121,11 +121,11 @@ pub const Worker = struct {
     fn workD1(me: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
         _ = src;
         var wd = util.opaqPtrTo(me.data, *WorkerData);
-        var io = util.opaqPtrTo(dptr, *EventSource);
+        const io = util.opaqPtrTo(dptr, *EventSource);
 
         var i: usize = 0;
         while (wd.cnt > 0) {
-            _ = os.write(io.id, wd.buf[i..i+1]) catch {
+            _ = std.posix.write(io.id, wd.buf[i..i+1]) catch {
                 me.msgTo(me, M1_WAIT, null);
                 return;
             };
@@ -143,7 +143,7 @@ pub const Worker = struct {
 
     fn waitEnter(me: *StageMachine) void {
         var wd = util.opaqPtrTo(me.data, *WorkerData);
-        os.close(wd.io.id);
+        std.posix.close(wd.io.id);
         wd.tm.enable(&me.md.eq, .{2000}) catch unreachable;
     }
 

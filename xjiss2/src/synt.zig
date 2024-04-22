@@ -156,20 +156,20 @@ pub const Jis = struct {
             var s: i16 = 0;
             for (&jis.tones, 0..) |*t, j| {
 
-                var ti = &scale[j];
+                const ti = &scale[j];
                 var sj: i16 = 0;
 
                 if (.silent == t.stage)
                     continue;
 
-                var a: f32 = @floatFromInt(jis.amp);
-                var o: f32 = @floatFromInt(jis.octave + 1);
-                var p: f32 = @floatFromInt(ti.period);
-                var b: u32 = @intFromFloat(jis.timbre * p / o);
+                const a: f32 = @floatFromInt(jis.amp);
+                const o: f32 = @floatFromInt(jis.octave + 1);
+                const p: f32 = @floatFromInt(ti.period);
+                const b: u32 = @intFromFloat(jis.timbre * p / o);
 
                 if (t.phase < b) {
-                    var ph: f32 = @floatFromInt(t.phase);
-                    var pe: f32 = @floatFromInt(ti.period);
+                    const ph: f32 = @floatFromInt(t.phase);
+                    const pe: f32 = @floatFromInt(ti.period);
                     sj = @intFromFloat(a * math.sin(o * 2.0 * math.pi * ph / pe));
                 }
 

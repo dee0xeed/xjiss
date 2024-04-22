@@ -76,7 +76,7 @@ pub const XjisSound = struct {
         fail.setReflex(Message.M0, .{.jump_to = work});
 
         me.sd.jis = jis;
-        me.sd.device = os.getenv("XJIS_PLAYBACK_DEVICE") orelse default_device;
+        me.sd.device = std.posix.getenv("XJIS_PLAYBACK_DEVICE") orelse default_device;
         return me;
     }
 
@@ -92,7 +92,7 @@ pub const XjisSound = struct {
         );
         if (ret < 0) {
             print("pcmOpen(): {s}\n", .{alsaStrErr(@intCast(ret))});
-            os.raise(os.SIG.TERM) catch unreachable;
+            std.posix.raise(std.posix.SIG.TERM) catch unreachable;
             return;
         }
 
@@ -102,7 +102,7 @@ pub const XjisSound = struct {
         );
         if (ret < 0) {
             print("{s}\n", .{alsaStrErr(@intCast(ret))});
-            os.raise(os.SIG.TERM) catch unreachable;
+            std.posix.raise(std.posix.SIG.TERM) catch unreachable;
             return;
         }
 
@@ -113,7 +113,7 @@ pub const XjisSound = struct {
         );
         if (ret < 0) {
             print("pcmSetParams(): {s}\n", .{alsaStrErr(@intCast(ret))});
-            os.raise(os.SIG.TERM) catch unreachable;
+            std.posix.raise(std.posix.SIG.TERM) catch unreachable;
             return;
         }
 
@@ -123,7 +123,8 @@ pub const XjisSound = struct {
     }
 
     fn initEnter(sm: *StageMachine) void {
-        var me = @fieldParentPtr(XjisSound, "sm", sm);
+        //var me = @fieldParentPtr(XjisSound, "sm", sm);
+        var me: *XjisSound = @fieldParentPtr("sm", sm);
         initAlsa(&me.sd);
         me.sd.snd_buf = sm.allocator.alloc(i16, 2 * me.sd.nframes) catch unreachable;
         @memset(me.sd.snd_buf, 0);
@@ -132,25 +133,26 @@ pub const XjisSound = struct {
     }
 
     fn workEnter(sm: *StageMachine) void {
-        var me = @fieldParentPtr(XjisSound, "sm", sm);
+        //var me = @fieldParentPtr(XjisSound, "sm", sm);
+        var me: *XjisSound = @fieldParentPtr("sm", sm);
         var pcm_poll: alsa.pollfd = undefined;
         var ret: c_int = 0;
 
         ret = pcmFdCount(me.sd.handle);
         if (ret < 0) {
             print("getPcmFdCount(): {s}\n", .{alsaStrErr(@intCast(ret))});
-            os.raise(os.SIG.TERM) catch unreachable;
+            std.posix.raise(std.posix.SIG.TERM) catch unreachable;
             return;
         }
         if (ret != 1) {
             print("getPcmFdCount(): we want only 1 fd\n", .{});
-            os.raise(os.SIG.TERM) catch unreachable;
+            std.posix.raise(std.posix.SIG.TERM) catch unreachable;
             return;
         }
         ret = pcmFd(me.sd.handle, &pcm_poll, 1);
         if (ret < 0) {
             print("getPcmFd(): {s}\n", .{alsaStrErr(@intCast(ret))});
-            os.raise(os.SIG.TERM) catch unreachable;
+            std.posix.raise(std.posix.SIG.TERM) catch unreachable;
             return;
         }
         me.sd.io.es.id = pcm_poll.fd;
@@ -160,9 +162,10 @@ pub const XjisSound = struct {
     fn workD1(sm: *StageMachine, src: ?*StageMachine, dptr: ?*anyopaque) void {
         _ = src;
         _ = dptr;
-        var me = @fieldParentPtr(XjisSound, "sm", sm);
+        //var me = @fieldParentPtr(XjisSound, "sm", sm);
+        var me: *XjisSound = @fieldParentPtr("sm", sm);
 
-        var ret = pcmWrite(me.sd.handle, me.sd.snd_buf.ptr, me.sd.nframes);
+        const ret = pcmWrite(me.sd.handle, me.sd.snd_buf.ptr, me.sd.nframes);
         if (ret < 0) {
             print("pcmWrite(): {s}\n", .{alsaStrErr(@intCast(ret))});
             sm.msgTo(sm, M0_FAIL, null);
@@ -185,7 +188,8 @@ pub const XjisSound = struct {
 
     fn failEnter(sm: *StageMachine) void {
         print("An error occured, recovering...\n", .{});
-        var me = @fieldParentPtr(XjisSound, "sm", sm);
+        //var me = @fieldParentPtr(XjisSound, "sm", sm);
+        var me: *XjisSound = @fieldParentPtr("sm", sm);
         _ = pcmClose(me.sd.handle);
         initAlsa(&me.sd);
         sm.msgTo(sm, M0_WORK, null);
