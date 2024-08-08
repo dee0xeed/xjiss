@@ -100,12 +100,12 @@ pub const Timer = struct {
     fn setValue(fd: i32, msec: u32) !void {
         const its = ITimerSpec {
             .it_interval = TimeSpec {
-                .tv_sec = 0,
-                .tv_nsec = 0,
+                .sec = 0,
+                .nsec = 0,
             },
             .it_value = TimeSpec {
-                .tv_sec = msec / 1000,
-                .tv_nsec = (msec % 1000) * 1000 * 1000,
+                .sec = msec / 1000,
+                .nsec = (msec % 1000) * 1000 * 1000,
             },
         };
         const tid: os.linux.TFD.TIMER = .{};

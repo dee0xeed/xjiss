@@ -8,10 +8,10 @@ It was written as
 * experiment with just intonation (music)
 * event driven state machines demo (programming)
 
-## How to build (zig 0.12 required)
+## How to build (zig 0.14 required)
 
 * make sure you have `libasound2-dev` and `libx11-dev` installed
-* `/opt/zig-0.12/zig build`
+* `/opt/zig-0.14/zig build`
 
 ## How to run
 
