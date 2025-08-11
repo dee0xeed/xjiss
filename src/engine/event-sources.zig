@@ -144,7 +144,7 @@ pub const EventSource = struct {
     }
 
     fn getTimerId() !i32 {
-        return try timerFd(std.os.linux.CLOCK.REALTIME, .{});
+        return try timerFd(std.os.linux.TIMERFD_CLOCK.REALTIME, .{});
     }
 
     /// obtain fd from OS

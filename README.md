@@ -11,7 +11,7 @@ It was written as
 ## How to build (zig 0.14 required)
 
 * make sure you have `libasound2-dev` and `libx11-dev` installed
-* `/opt/zig-0.14/zig build`
+* `/opt/zig-0.14.1/zig build`
 
 ## How to run
 

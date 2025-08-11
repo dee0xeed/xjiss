@@ -118,7 +118,8 @@ pub const MessageDispatcher = struct {
 
     /// message processing loop
     pub fn loop(self: *MessageDispatcher) !void {
-        outer: while (true) {
+        outer:
+        while (true) {
             while (true) {
                 const msg = self.mq.get() orelse break;
                 if (msg.dst) |sm| {
@@ -129,7 +130,8 @@ pub const MessageDispatcher = struct {
                             bye(sm);
                         }
                     }
-                    break :outer;
+                    break
+                    :outer;
                 }
             }
             try self.eq.wait();

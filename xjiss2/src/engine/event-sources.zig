@@ -29,9 +29,9 @@ pub const EventSource = struct {
     id: i32 = -1, // fd in most cases, but not always
     owner: *StageMachine,
     eq: *ecap.EventQueue,
-
     // "virtual method"
     getMessageCodeImpl: *const fn(es: *EventSource, event_mask: u32) anyerror!u8,
+
     pub fn getMessageCode(es: *EventSource, event_mask: u32) !u8 {
         return try es.getMessageCodeImpl(es, event_mask);
     }
@@ -88,7 +88,7 @@ pub const Timer = struct {
     pub fn init(sm: *StageMachine, code: u8) !Timer {
         return Timer {
             .es = .{
-                .id = try timerFd(std.posix.CLOCK.REALTIME, .{}),
+                .id = try timerFd(std.os.linux.TIMERFD_CLOCK.REALTIME, .{}),
                 .owner = sm,
                 .getMessageCodeImpl = &readInfo,
                 .eq = sm.md.eq,

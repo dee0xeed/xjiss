@@ -36,7 +36,6 @@ pub const StageMachine = struct {
         };
 
         /// number of rows in reflex matrix
-        //const nrows = @typeInfo(EventSource.Kind).Enum.fields.len;
         const esk_tags = "MDSTF";
         const nrows = esk_tags.len;
         /// number of columns in reflex matrix

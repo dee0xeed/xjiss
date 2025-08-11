@@ -25,6 +25,7 @@ pub const MachinePool = struct {
     }
 
     pub fn get(self: *Self) ?*StageMachine {
-        return self.list.popOrNull();
+        //return self.list.popOrNull();
+        return self.list.pop();
     }
 };
